@@ -1,9 +1,14 @@
 import sys
+import time
 import timeit
 import numpy as np
 import cv2
-INPUT_IMAGE = "assets/a01 - Original.bmp"
-JANELA = 51
+# INPUT_IMAGE = "assets/a01 - Original.bmp"
+INPUT_IMAGE = "assets/b01 - Original.bmp"
+JANELA = 7
+# FILTRO = 'ingenuo'
+# FILTRO = 'separavel'
+FILTRO = 'integral'
 
 def filtro_media_ingenuo(img, janela):
     """
@@ -40,7 +45,6 @@ def filtro_media_ingenuo(img, janela):
                 img[y][x][z] = soma / (janela * janela)
 
     return img
-
 
 def filtro_media_separavel(img, janela):
     """
@@ -114,8 +118,83 @@ def filtro_media_separavel(img, janela):
 
     # Retorna a imagem com o filtro de média aplicado.
     return img
-#===============================================================================
 
+def get_integral(img):
+    buffer = img.copy().astype(np.float32)
+    
+    width = buffer.shape[1]
+    height = buffer.shape[0]
+    # for y in range(0, 4):
+    #     for x in range(1, 5):
+    #         pixel_value = buffer[y, x][0]
+    #         print(f'{pixel_value:.3f}', end=' ') # Imprime o valor com alinhamento
+    #     print() # Quebra a linha após cada coluna
+    # print('-'*20)
+    
+    for c in range(0, 3):
+        for y in range(0, height):
+            for x in range(0, width):
+                buffer[y, x][c] += buffer[y, x-1][c]
+                
+        for y in range(0, height):
+            for x in range(0, width):
+                buffer[y, x][c] += buffer[y-1, x][c]
+    # for c in range(0, 3):
+    #     for y in range(0, height):
+    #         for x in range(2, width):
+    #             buffer[y, x][c] += buffer[y, x-1][c]
+                
+    #     for y in range(1, height):
+    #         for x in range(0, width):
+    #             buffer[y, x][c] += buffer[y-1, x][c]
+                
+    # for y in range(0, 4):
+    #     for x in range(1, 5):
+    #         pixel_value = buffer[y, x][0]
+    #         print(f'{pixel_value:.3f}', end=' ') # Imprime o valor com alinhamento
+    #     print() # Quebra a linha após cada coluna
+                
+    return buffer       
+
+def filtro_media_integral(img, janela):
+    img_out = img.copy()
+    buffer = get_integral(img_out)
+    
+    altura = img.shape[0]
+    largura = img.shape[1]
+    r_janela = janela // 2
+    
+    for c in range(0, 3):
+        for y in range (r_janela, altura - r_janela):
+            for x in range (r_janela, largura - r_janela):
+                superior = y - r_janela - 1
+                inferior = y + r_janela
+                esquerdo = x - r_janela - 1
+                direito = x + r_janela
+                
+                A = buffer[inferior, direito][c] # soma canto inferior direito (dentro)
+                
+                B = buffer[superior, direito][c] # deduz canto superior direito (+1 p cima)
+                
+                C = buffer[inferior, esquerdo][c]# deduz canto inferior esquerdo (+1 p esquerda)
+                
+                D = buffer[superior, esquerdo][c] # soma canto superior esquerdo (+1 p cima e p esquerda)
+                
+                media = (A - B - C + D) / (janela ** 2)
+                img_out[y, x][c] = media
+                
+    return img_out
+
+#===============================================================================
+def filtro(img, janela):
+    if (FILTRO == 'ingenuo'):
+        return filtro_media_ingenuo(img, janela)
+    elif (FILTRO == 'separavel'):
+        return filtro_media_separavel(img, janela)
+    elif (FILTRO == 'integral'):
+        return filtro_media_integral(img, janela)
+    else:
+        raise ValueError("Erro de Valor da Macro: Selecione um valor valido para a macro")
 def main ():
 
     # Abre a imagem em escala de cinza.
@@ -127,8 +206,14 @@ def main ():
     #Convertendo para float.
     img = img.astype (np.float32) / 255
 
+    start = time.perf_counter()
     # Mantém uma cópia colorida para desenhar a saída.
-    img_out = filtro_media_separavel(img,JANELA)
+    # img_out = filtro_media_separavel(img,JANELA)
+    # img_out = filtro_media_integral(img, JANELA)
+    
+    img_out = filtro(img, JANELA)
+    end = time.perf_counter()
+    print(f'tempo = {end - start:.6f}s')
 
     cv2.imshow ('02 - out', img_out)
     cv2.imwrite ('02 - out.png', (img_out*255).astype(np.uint8))
