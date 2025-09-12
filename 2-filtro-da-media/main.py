@@ -6,9 +6,9 @@ import cv2
 # INPUT_IMAGE = "assets/a01 - Original.bmp"
 INPUT_IMAGE = "assets/b01 - Original.bmp"
 JANELA = 7
-# FILTRO = 'ingenuo'
+FILTRO = 'ingenuo'
 # FILTRO = 'separavel'
-FILTRO = 'integral'
+# FILTRO = 'integral'
 
 def filtro_media_ingenuo(img, janela):
     """
@@ -22,6 +22,8 @@ def filtro_media_ingenuo(img, janela):
     Valor de retorno:
         imagem filtrada (NumPy array).
     """
+    start = time.perf_counter()
+
     # Obtém as dimensões da imagem.
     altura = img.shape[0]
     largura = img.shape[1]
@@ -43,6 +45,9 @@ def filtro_media_ingenuo(img, janela):
                         soma += buffer[i][j][z]
                 # Calcula a média e atribui ao pixel correspondente na imagem de saída.
                 img[y][x][z] = soma / (janela * janela)
+    
+    end = time.perf_counter()
+    print(f'tempo = {end - start:.6f}s')
 
     return img
 
@@ -58,6 +63,7 @@ def filtro_media_separavel(img, janela):
     Valor de retorno:
         imagem filtrada (NumPy array).
     """
+    start = time.perf_counter()
 
     # Obtém as dimensões da imagem.
     altura = img.shape[0]
@@ -115,7 +121,8 @@ def filtro_media_separavel(img, janela):
                 img[y][x][z] = soma / (janela * janela)
                 antigo += 1
                 novo += 1
-
+    end = time.perf_counter()
+    print(f'tempo = {end - start:.6f}s')
     # Retorna a imagem com o filtro de média aplicado.
     return img
 
@@ -124,66 +131,60 @@ def get_integral(img):
     
     width = buffer.shape[1]
     height = buffer.shape[0]
-    # for y in range(0, 4):
-    #     for x in range(1, 5):
-    #         pixel_value = buffer[y, x][0]
-    #         print(f'{pixel_value:.3f}', end=' ') # Imprime o valor com alinhamento
-    #     print() # Quebra a linha após cada coluna
-    # print('-'*20)
     
-    for c in range(0, 3):
-        for y in range(0, height):
-            for x in range(0, width):
+    for c in range(3):
+        for y in range(height):
+            for x in range(1, width):
                 buffer[y, x][c] += buffer[y, x-1][c]
                 
-        for y in range(0, height):
-            for x in range(0, width):
+        for y in range(1, height):
+            for x in range(width):
                 buffer[y, x][c] += buffer[y-1, x][c]
-    # for c in range(0, 3):
-    #     for y in range(0, height):
-    #         for x in range(2, width):
-    #             buffer[y, x][c] += buffer[y, x-1][c]
-                
-    #     for y in range(1, height):
-    #         for x in range(0, width):
-    #             buffer[y, x][c] += buffer[y-1, x][c]
-                
-    # for y in range(0, 4):
-    #     for x in range(1, 5):
-    #         pixel_value = buffer[y, x][0]
-    #         print(f'{pixel_value:.3f}', end=' ') # Imprime o valor com alinhamento
-    #     print() # Quebra a linha após cada coluna
                 
     return buffer       
 
 def filtro_media_integral(img, janela):
-    img_out = img.copy()
-    buffer = get_integral(img_out)
     
+    buffer = get_integral(img)
+    
+    start = time.perf_counter()
+
     altura = img.shape[0]
     largura = img.shape[1]
     r_janela = janela // 2
     
-    for c in range(0, 3):
-        for y in range (r_janela, altura - r_janela):
-            for x in range (r_janela, largura - r_janela):
-                superior = y - r_janela - 1
-                inferior = y + r_janela
-                esquerdo = x - r_janela - 1
-                direito = x + r_janela
+    for c in range(3):
+
+        for y in range (altura):
+            for x in range (largura):
+                
+                superior = max (0 ,y - r_janela) - 1
+                inferior = min (altura - 1, y + r_janela)
+                esquerdo = max (0,x - r_janela) - 1
+                direito = min (largura -1, x + r_janela)
+
+                altura_janela = (inferior - (superior + 1) + 1)
+                largura_janela = (direito - (esquerdo + 1) + 1)
+                area = altura_janela * largura_janela
                 
                 A = buffer[inferior, direito][c] # soma canto inferior direito (dentro)
                 
-                B = buffer[superior, direito][c] # deduz canto superior direito (+1 p cima)
+                B,C,D = 0,0,0
+                if superior >= 0:
+                    B = buffer[superior, direito][c] # reduz canto superior direito (+1 p cima)
                 
-                C = buffer[inferior, esquerdo][c]# deduz canto inferior esquerdo (+1 p esquerda)
+                if esquerdo >= 0:
+                    C = buffer[inferior, esquerdo][c]# reduz canto inferior esquerdo (+1 p esquerda)
                 
-                D = buffer[superior, esquerdo][c] # soma canto superior esquerdo (+1 p cima e p esquerda)
+                if superior >= 0 and esquerdo >= 0:
+                    D = buffer[superior, esquerdo][c] # soma canto superior esquerdo (+1 p cima e p esquerda)
                 
-                media = (A - B - C + D) / (janela ** 2)
-                img_out[y, x][c] = media
-                
-    return img_out
+                media = (A - B - C + D) / area
+                img[y, x][c] = media
+
+    end = time.perf_counter()
+    print(f'tempo = {end - start:.6f}s')
+    return img
 
 #===============================================================================
 def filtro(img, janela):
@@ -206,14 +207,11 @@ def main ():
     #Convertendo para float.
     img = img.astype (np.float32) / 255
 
-    start = time.perf_counter()
     # Mantém uma cópia colorida para desenhar a saída.
     # img_out = filtro_media_separavel(img,JANELA)
     # img_out = filtro_media_integral(img, JANELA)
     
     img_out = filtro(img, JANELA)
-    end = time.perf_counter()
-    print(f'tempo = {end - start:.6f}s')
 
     cv2.imshow ('02 - out', img_out)
     cv2.imwrite ('02 - out.png', (img_out*255).astype(np.uint8))
