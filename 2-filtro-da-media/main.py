@@ -214,7 +214,7 @@ def main ():
     img_out = filtro(img, JANELA)
 
     cv2.imshow ('02 - out', img_out)
-    cv2.imwrite ('02 - out.png', (img_out*255).astype(np.uint8))
+    cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
     cv2.waitKey ()
     cv2.destroyAllWindows ()
 
