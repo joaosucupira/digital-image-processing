@@ -5,25 +5,26 @@ import numpy as np
 import cv2
 INPUT_IMAGE_1 = "assets/GT2.BMP"
 INPUT_IMAGE_2 = "assets/Wind Waker GC.bmp"
-
+LUMINOSO = 170
 #===============================================================================
 def main ():
 
-    # Abre a imagem em escala de cinza.
     img = cv2.imread (INPUT_IMAGE_1)
+    
     if img is None:
         print ('Erro abrindo a imagem.\n')
         sys.exit ()
+    
+    altura = img.shape[0]
+    largura = img.shape[1]
+    
+    brigth_pass = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    brigth_pass[:,:,2] = np.where(brigth_pass[:,:,2] < LUMINOSO, 0, brigth_pass[:,:,2])
 
-    #Convertendo para float.
-    img = img.astype (np.float32) / 255
+    img_out = cv2.cvtColor(brigth_pass, cv2.COLOR_HSV2BGR)
 
-    # Mantém uma cópia colorida para desenhar a saída.
-    # img_out = filtro_media_separavel(img,JANELA)
-    # img_out = filtro_media_integral(img, JANELA)
-
-    cv2.imshow ('03 - out', img)
-    cv2.imwrite ('out/03 - out.png', (img*255).astype(np.uint8))
+    cv2.imshow ('03 - out', img_out)
+    cv2.imwrite ('out/03 - out.png', img_out)
     cv2.waitKey ()
     cv2.destroyAllWindows ()
 
