@@ -8,11 +8,11 @@ INPUT_IMAGE_2 = "assets/Wind Waker GC.bmp"
 LUMINOSO = 0.77
 PRETO = 0
 JANELA = 3
-REPETICOES = 3
+REPETICOES = 4
 #===============================================================================
 
 
-def bloxbloom(mascara, janela, reps):
+def bloxbloom(mascara, janela, reps, intensity = 1.2):
 
     borrada = np.zeros_like(mascara)
     kernel = (0,0)
@@ -25,12 +25,12 @@ def bloxbloom(mascara, janela, reps):
         for i in range (reps):
             borrada = cv2.blur(borrada, kernel)
 
-        cv2.imshow ('03 - out', (borrada*255.0).astype(np.uint8))
-        cv2.waitKey (0)
         janela = janela*2 + 1
         sum += borrada
 
-    return np.clip(sum, 0, 1)
+    sum = cv2.normalize(sum, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    
+    return sum * intensity
 
 
 #===============================================================================
