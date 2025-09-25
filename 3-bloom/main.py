@@ -1,11 +1,11 @@
-/import sys
+import sys
 import time
 import timeit
 import numpy as np
 import cv2
 INPUT_IMAGE_1 = "assets/GT2.BMP"
 INPUT_IMAGE_2 = "assets/Wind Waker GC.bmp"
-LUMINOSO = 0.77
+LUMINOSO = 0.6
 INTENSIDADE_BLOOM = 1.2
 PRETO = 0
 JANELA = 3
@@ -30,7 +30,7 @@ def bloxbloom(mascara, janela, reps, intensity = 1.2):
         sum += borrada
 
     sum = cv2.normalize(sum, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    
+    cv2.imshow ('03 - bloom', (sum*255.0).astype(np.uint8))
     return sum * intensity
 
 
@@ -76,7 +76,8 @@ def main ():
         img_blur = cv2.normalize(img_blur, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         return img_blur * intensity
     
-    bloom = gaussian_bloom(img)
+    bloom = bloxbloom(img, JANELA, REPETICOES, INTENSIDADE_BLOOM)
+    # bloom = gaussian_bloom
     
     img_final = img_original + bloom
     
@@ -85,6 +86,7 @@ def main ():
     img_final = np.clip(img_final, 0, 1)
     
 
+    cv2.imshow ('03 - bloom', (bloom*255.0).astype(np.uint8))
     cv2.imshow ('03 - out', (img_final*255.0).astype(np.uint8))
     cv2.waitKey (0)
     cv2.imwrite ('out/03 - out.png', (img_final*255.0).astype(np.uint8))
