@@ -1,4 +1,4 @@
-import sys
+/import sys
 import time
 import timeit
 import numpy as np
@@ -8,7 +8,34 @@ INPUT_IMAGE_2 = "assets/Wind Waker GC.bmp"
 LUMINOSO = 0.77
 INTENSIDADE_BLOOM = 1.2
 PRETO = 0
+JANELA = 3
+REPETICOES = 4
 #===============================================================================
+
+
+def bloxbloom(mascara, janela, reps, intensity = 1.2):
+
+    borrada = np.zeros_like(mascara)
+    kernel = (0,0)
+    sum =  np.zeros_like(mascara)
+    for j in range (4):
+
+        kernel = (janela,janela)
+        borrada = cv2.blur(mascara, kernel)
+
+        for i in range (reps):
+            borrada = cv2.blur(borrada, kernel)
+
+        janela = janela*2 + 1
+        sum += borrada
+
+    sum = cv2.normalize(sum, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    
+    return sum * intensity
+
+
+#===============================================================================
+
 def main ():
 
     img = cv2.imread (INPUT_IMAGE_2).astype(np.float32) / 255.0
