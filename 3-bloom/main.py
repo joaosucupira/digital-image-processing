@@ -13,7 +13,7 @@ import cv2
 INPUT_IMAGE_1 = "assets/GT2.BMP"
 INPUT_IMAGE_2 = "assets/Wind Waker GC.bmp"
 LUMINOSO = 0.6
-INTENSIDADE_BLOOM = 0.9
+INTENSIDADE_BLOOM = 0.7
 PRETO = 0
 JANELA = 11
 REPETICOES = 5
@@ -56,7 +56,7 @@ def gaussian_bloom(img, intensity=INTENSIDADE_BLOOM):
 
 def main ():
 
-    img = cv2.imread (INPUT_IMAGE_2).astype(np.float32) / 255.0
+    img = cv2.imread (INPUT_IMAGE_1).astype(np.float32) / 255.0
     img_original = img.copy()
     
     if img is None:
