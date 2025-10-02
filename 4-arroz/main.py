@@ -1,5 +1,6 @@
 #===============================================================================
-# Exemplo: segmentação de uma imagem em escala de cinza.
+# Contagem de arroz
+# AutoreS: João Teixeira e João Teixeira
 #-------------------------------------------------------------------------------
 # Universidade Tecnológica Federal do Paraná
 #===============================================================================
@@ -14,33 +15,32 @@ import cv2
 INPUT_IMAGE = 'assets/60.bmp'
 ALTURA_MIN = 5
 LARGURA_MIN = 5
-THRESHOLD = 0.6
-JANELA = 55
+THRESHOLD = 0.6 #Talvez otimizar atraves de histograma (na media funciona mas pode quebrar)
+JANELA = 55 #Otimizar de acordo com o tamanho da imagem
+CONT_BLURS = 20
 ARROZ = 1
 FUNDO = 0
 #===============================================================================
 
 def binariza (img, threshold):
 
-    cv2.imwrite ('out/01 - grey.png', (img*255).astype(np.uint8))
-
     buffer = img.copy()
-    for cont in range(20):
+    for cont in range(CONT_BLURS):
         buffer = cv2.blur(buffer, (JANELA, JANELA))
 
 
     buffer = img - buffer
     buffer = cv2.normalize(buffer, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
+    #Otimizar treshold com o buffer nesse momento
     cv2.imwrite ('out/01 - diff.png', (buffer*255).astype(np.uint8))
 
     buffer = np.where(buffer > threshold, ARROZ, FUNDO).astype(np.float32)
     
     kernel = np.ones((3,3),np.float32)
-    kernel_2 = np.ones((3,3),np.float32)
 
     buffer = cv2.erode(buffer, kernel, iterations = 1)
-    buffer = cv2.dilate(buffer, kernel_2, iterations = 1)
+    buffer = cv2.dilate(buffer, kernel, iterations = 1)
 
     return buffer
 #-------------------------------------------------------------------------------
