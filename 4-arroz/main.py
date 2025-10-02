@@ -11,26 +11,41 @@ import cv2
 
 #===============================================================================
 
-INPUT_IMAGE =  'assets/60.bmp'
-THRESHOLD = 0.7
+INPUT_IMAGE = 'assets/60.bmp'
 ALTURA_MIN = 5
 LARGURA_MIN = 5
-N_PIXELS_MIN = 5
-THRESHOLD = 0.05
-JANELA = 20
-SIGMA = 4
+THRESHOLD = 0.6
+JANELA = 55
 ARROZ = 1
 FUNDO = 0
 #===============================================================================
 
 def binariza (img, threshold):
 
-    diff = img - cv2.GaussianBlur(img, (0, 0), 3.5)
+    cv2.imwrite ('out/01 - grey.png', (img*255).astype(np.uint8))
 
-    return np.where(diff > threshold, ARROZ, FUNDO).astype(np.float32)
+    buffer = img.copy()
+    for cont in range(20):
+        buffer = cv2.blur(buffer, (JANELA, JANELA))
+
+
+    buffer = img - buffer
+    buffer = cv2.normalize(buffer, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    cv2.imwrite ('out/01 - diff.png', (buffer*255).astype(np.uint8))
+
+    buffer = np.where(buffer > threshold, ARROZ, FUNDO).astype(np.float32)
+    
+    kernel = np.ones((3,3),np.float32)
+    kernel_2 = np.ones((3,3),np.float32)
+
+    buffer = cv2.erode(buffer, kernel, iterations = 1)
+    buffer = cv2.dilate(buffer, kernel_2, iterations = 1)
+
+    return buffer
 #-------------------------------------------------------------------------------
 
-def rotula (img, largura_min, altura_min, n_pixels_min):
+def rotula (img, largura_min, altura_min):
 
     altura = img.shape[0]
     largura = img.shape[1]
@@ -46,20 +61,18 @@ def rotula (img, largura_min, altura_min, n_pixels_min):
                 flood_fill(img, label, x, y, componente_achado)
 
                 # Verifica se o componente atende aos critérios de tamanho.
-                if verficar_componente(componente_achado, largura_min, altura_min, n_pixels_min):
+                if verficar_componente(componente_achado, largura_min, altura_min):
                     componentes.append(componente_achado)
 
                 label += 0.01
     return componentes
 #-------------------------------------------------------------------------------
 
-def verficar_componente(componente, largura_min, altura_min, n_pixels_min):
+def verficar_componente(componente, largura_min, altura_min):
 
     altura_obj = componente['B'] - componente['T'] + 1
     largura_obj = componente['R'] - componente['L'] + 1
 
-    if(componente['n_pixels'] < n_pixels_min):
-        return False
     if(altura_obj < altura_min):
         return False
     if(largura_obj < largura_min):
@@ -119,7 +132,7 @@ def main ():
     cv2.imshow ('01 - binarizada', img)
     cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
 
-    componentes = rotula (img, LARGURA_MIN, ALTURA_MIN, N_PIXELS_MIN)
+    componentes = rotula (img, LARGURA_MIN, ALTURA_MIN)
     n_componentes = len (componentes)
     print ('%d componentes detectados.' % n_componentes)
 
