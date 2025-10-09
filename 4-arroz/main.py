@@ -21,6 +21,18 @@ ARROZ = 1
 FUNDO = 0
 #===============================================================================
 
+class Grao:
+    def __init__(self, label, x, y):
+        self.label = label
+        self.n_pixels = 0
+        self.area = 0
+        self.isolado = False
+        self.T = y
+        self.L = x
+        self.B = y
+        self.R = x
+
+
 def binariza (img):
 
     janela = int(min(img.shape[0], img.shape[1])*JANELA_PERCENT)
@@ -50,28 +62,28 @@ def rotula (img, area_min):
     altura = img.shape[0]
     largura = img.shape[1]
     label = 1.01
-    componentes = []
+    graos = []
 
     for y in range(altura):
         for x in range(largura):
             # Se achou um pixel de um objeto que ainda não foi rotulado.
             if img[y][x] == ARROZ:
                 # Inicia o flood fill para encontrar o componente inteiro.
-                componente_achado = {'label': label, 'n_pixels': 0, 'area':0, 'isolado':False, 'T': y, 'L': x, 'B': y, 'R': x}
-                flood_fill(img, label, x, y, componente_achado)
+                grao_achado = Grao(label, x, y)
+                flood_fill(img, grao_achado)
 
                 # Verifica se o componente atende aos critérios de tamanho.
-                if verficar_componente(componente_achado, area_min):
-                    componentes.append(componente_achado)
+                if verficar_grao(grao_achado, area_min):
+                    graos.append(grao_achado)
 
                 label += 0.01
-    return componentes
+    return graos
 #-------------------------------------------------------------------------------
     
-def definir_isolados(componentes, alpha, max_it):
+def definir_isolados(graos, alpha, max_it):
 
     gaus = 1.4826
-    areas = np.sort(np.asarray([c['area'] for c in componentes], dtype=np.uint32))
+    areas = np.sort(np.asarray([g.area for g in graos], dtype=np.uint32))
     isolados = areas.copy()
 
     for _ in range(max_it):
@@ -90,26 +102,26 @@ def definir_isolados(componentes, alpha, max_it):
 
         isolados = isolados[cortados]
 
-    for c in componentes:
-        if c['area'] in isolados:
-            c['isolado'] = True
+    for g in graos:
+        if g.area in isolados:
+            g.isolado = True
 
-    return componentes
+    return graos
 #-------------------------------------------------------------------------------
 
-def total_graos(componentes):
+def estimar_total(graos):
 
     total = 0
     n_pixels_medio = 0
 
     grudados = []
 
-    for c in componentes:
-        if(c['isolado']):
-            n_pixels_medio += c['n_pixels']
+    for g in graos:
+        if(g.isolado):
+            n_pixels_medio += g.n_pixels
             total += 1
         else:
-            grudados.append(c['n_pixels'])
+            grudados.append(g.n_pixels)
 
     n_pixels_medio /= total
 
@@ -119,50 +131,53 @@ def total_graos(componentes):
     return total
 #-------------------------------------------------------------------------------   
 
-def verficar_componente(componente, area_min):
+def verficar_grao(grao, area_min):
 
-    altura_obj = componente['B'] - componente['T'] + 1
-    largura_obj = componente['R'] - componente['L'] + 1
+    altura_obj = grao.B - grao.T + 1
+    largura_obj = grao.R - grao.L + 1
 
     area_obj = altura_obj * largura_obj
 
     if(area_obj < area_min):
         return False
     
-    componente['area'] = area_obj
+    grao.area = area_obj
 
     return True
 #-------------------------------------------------------------------------------
 
-def flood_fill(img, label, x, y, componente):
+def flood_fill(img, grao):
 
     altura = img.shape[0]
     largura = img.shape[1]
-
+    label = grao.label
+    x = grao.L
+    y = grao.T
+    
     pilha = [(x,y)]
     img[y][x] = label
     
     while(pilha):
         
-        componente['n_pixels'] += 1
+        grao.n_pixels += 1
         x, y = pilha.pop()
 
         if(x > 0 and img[y][x-1] == ARROZ): # Vizinho da ESQUERDA
             pilha.append((x-1, y))
             img[y][x-1] = label
-            componente['L'] = min(componente['L'], x-1)
+            grao.L = min(grao.L, x-1)
         if(y > 0 and img[y-1][x] == ARROZ): # Vizinho de CIMA
             pilha.append((x, y-1))
             img[y-1][x] = label
-            componente['T'] = min(componente['T'], y-1)
+            grao.T = min(grao.T, y-1)
         if(x < largura-1 and img[y][x+1] == ARROZ): # Vizinho da DIREITA
             pilha.append((x+1, y))
             img[y][x+1] = label
-            componente['R'] = max(componente['R'], x+1)
+            grao.R = max(grao.R, x+1)
         if(y < altura-1 and img[y+1][x] == ARROZ): # Vizinho de BAIXO
             pilha.append((x, y+1))
             img[y+1][x] = label
-            componente['B'] = max(componente['B'], y+1)
+            grao.B = max(grao.B, y+1)
 #------------------------------------------------------------------------------- 
 
 def main ():
@@ -182,19 +197,19 @@ def main ():
     cv2.imshow ('01 - binarizada', img)
     cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
 
-    componentes = rotula (img, AREA_MIN)
-    n_componentes = len (componentes)
-    print ('%d componentes detectados.' % n_componentes)
+    graos = rotula (img, AREA_MIN)
+    n_graos = len (graos)
+    print ('%d componentes detectados.' % n_graos)
 
-    componentes = definir_isolados(componentes, ALPHA, MAX_IT)
+    graos = definir_isolados(graos, ALPHA, MAX_IT)
     
-    total_de_graos = total_graos(componentes)
-    print(f'Total de grãos estimado: {total_de_graos}')
+    total = estimar_total(graos)
+    print(f'Total de grãos estimado: {total}')
 
     # Mostra os objetos encontrados.
-    for c in componentes:
-        cor = (0,1,0) if c['isolado'] else (0,0,1) # Verde para isolados, Vermelho para grudados
-        cv2.rectangle (img_out, (c ['L'], c ['T']), (c ['R'], c ['B']), cor, 1)
+    for g in graos:
+        cor = (0,1,0) if g.isolado else (0,0,1) # Verde para isolados, Vermelho para grudados
+        cv2.rectangle (img_out, (g.L, g.T), (g.R, g.B), cor, 1)
 
     cv2.imshow ('02 - out', img_out)
     cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
