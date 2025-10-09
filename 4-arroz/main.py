@@ -12,7 +12,7 @@ from operator import itemgetter
 
 #===============================================================================
 
-INPUT_IMAGE = 'assets/205.bmp'
+INPUT_IMAGE = 'assets/150.bmp'
 AREA_MIN = 25
 ALPHA = 3.0
 MAX_IT = 20
@@ -44,6 +44,9 @@ def binariza (img):
     buffer = img - buffer
     
     buffer = cv2.normalize(buffer, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    cv2.imshow ('03 - diff', buffer)
+    cv2.imwrite ('out/03 - diff.png', (buffer*255).astype(np.uint8))
     
     img_binarizada = cv2.threshold((buffer * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
    
