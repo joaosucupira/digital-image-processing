@@ -6,16 +6,17 @@
 #===============================================================================
 
 import sys
-import timeit
 import numpy as np
 import cv2
+from operator import itemgetter
 
 #===============================================================================
 
-INPUT_IMAGE = 'assets/60.bmp'
-ALTURA_MIN = 5
-LARGURA_MIN = 5
-JANELA_PERCENT = 0.15 #porcentagem do tamanho da imagem
+INPUT_IMAGE = 'assets/205.bmp'
+AREA_MIN = 25
+ALPHA = 3.0
+MAX_IT = 20
+JANELA_PERCENT = 0.15 #porcentagem em relacao ao tamanho da imagem
 ARROZ = 1
 FUNDO = 0
 #===============================================================================
@@ -44,7 +45,7 @@ def binariza (img):
     return buffer
 #-------------------------------------------------------------------------------
 
-def rotula (img, largura_min, altura_min):
+def rotula (img, area_min):
 
     altura = img.shape[0]
     largura = img.shape[1]
@@ -56,29 +57,81 @@ def rotula (img, largura_min, altura_min):
             # Se achou um pixel de um objeto que ainda não foi rotulado.
             if img[y][x] == ARROZ:
                 # Inicia o flood fill para encontrar o componente inteiro.
-                componente_achado = {'label': label, 'n_pixels': 0, 'T': y, 'L': x, 'B': y, 'R': x}
+                componente_achado = {'label': label, 'n_pixels': 0, 'area':0, 'isolado':False, 'T': y, 'L': x, 'B': y, 'R': x}
                 flood_fill(img, label, x, y, componente_achado)
 
                 # Verifica se o componente atende aos critérios de tamanho.
-                if verficar_componente(componente_achado, largura_min, altura_min):
+                if verficar_componente(componente_achado, area_min):
                     componentes.append(componente_achado)
 
                 label += 0.01
     return componentes
 #-------------------------------------------------------------------------------
+    
+def definir_isolados(componentes, alpha, max_it):
 
-def verficar_componente(componente, largura_min, altura_min):
+    gaus = 1.4826
+    areas = np.sort(np.asarray([c['area'] for c in componentes], dtype=np.uint32))
+    isolados = areas.copy()
+
+    for _ in range(max_it):
+
+        mediana = np.median(isolados)
+        mad = np.median(np.abs(isolados - mediana))
+
+        if mad == 0:
+            break
+
+        limite = mediana + alpha * mad * gaus
+        cortados = isolados <= limite
+
+        if cortados.all():
+            break
+
+        isolados = isolados[cortados]
+
+    for c in componentes:
+        if c['area'] in isolados:
+            c['isolado'] = True
+
+    return componentes
+#-------------------------------------------------------------------------------
+
+def total_graos(componentes):
+
+    total = 0
+    n_pixels_medio = 0
+
+    grudados = []
+
+    for c in componentes:
+        if(c['isolado']):
+            n_pixels_medio += c['n_pixels']
+            total += 1
+        else:
+            grudados.append(c['n_pixels'])
+
+    n_pixels_medio /= total
+
+    for pixels in grudados:
+        total += round (pixels / n_pixels_medio)
+
+    return total
+#-------------------------------------------------------------------------------   
+
+def verficar_componente(componente, area_min):
 
     altura_obj = componente['B'] - componente['T'] + 1
     largura_obj = componente['R'] - componente['L'] + 1
 
-    if(altura_obj < altura_min):
+    area_obj = altura_obj * largura_obj
+
+    if(area_obj < area_min):
         return False
-    if(largura_obj < largura_min):
-        return False
+    
+    componente['area'] = area_obj
 
     return True
-#-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 def flood_fill(img, label, x, y, componente):
@@ -129,13 +182,19 @@ def main ():
     cv2.imshow ('01 - binarizada', img)
     cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
 
-    componentes = rotula (img, LARGURA_MIN, ALTURA_MIN)
+    componentes = rotula (img, AREA_MIN)
     n_componentes = len (componentes)
     print ('%d componentes detectados.' % n_componentes)
 
+    componentes = definir_isolados(componentes, ALPHA, MAX_IT)
+    
+    total_de_graos = total_graos(componentes)
+    print(f'Total de grãos estimado: {total_de_graos}')
+
     # Mostra os objetos encontrados.
     for c in componentes:
-        cv2.rectangle (img_out, (c ['L'], c ['T']), (c ['R'], c ['B']), (0,0,1))
+        cor = (0,1,0) if c['isolado'] else (0,0,1) # Verde para isolados, Vermelho para grudados
+        cv2.rectangle (img_out, (c ['L'], c ['T']), (c ['R'], c ['B']), cor, 1)
 
     cv2.imshow ('02 - out', img_out)
     cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
