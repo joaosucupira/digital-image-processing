@@ -19,6 +19,8 @@ MAX_IT = 20
 JANELA_PERCENT = 0.15 #porcentagem em relacao ao tamanho da imagem
 ARROZ = 1
 FUNDO = 0
+LIMITE_ESCURO = 0.68
+LIMITE_APROX = 0.3
 #===============================================================================
 
 class Grao:
@@ -45,8 +47,8 @@ def binariza (img):
     
     buffer = cv2.normalize(buffer, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
-    cv2.imshow ('03 - diff', buffer)
-    cv2.imwrite ('out/03 - diff.png', (buffer*255).astype(np.uint8))
+    # cv2.imshow ('03 - diff', buffer)
+    # cv2.imwrite ('out/03 - diff.png', (buffer*255).astype(np.uint8))
     
     img_binarizada = cv2.threshold((buffer * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
    
@@ -112,10 +114,41 @@ def definir_isolados(graos, alpha, max_it):
     return graos
 #-------------------------------------------------------------------------------
 
+def estimar_grudado(grudado, media):
+    
+    # parte inteira da estimativa baseada na média simples
+    estimativa = int(grudado.n_pixels / media)
+    
+    # porcentagem da zona vazia daquela sessão local de arroz grudado
+    escuro = grudado.area - grudado.n_pixels
+    escuro_pctg = round(escuro/grudado.area, 2) 
+    
+    # parte decimal da estimativa
+    e_truncada = int(grudado.n_pixels / media)
+    e_exata = (grudado.n_pixels / media)
+    parte_decimal = e_exata - e_truncada
+
+    if (parte_decimal > LIMITE_APROX):
+        estimativa += 1
+        
+    if (escuro_pctg > LIMITE_ESCURO):
+        estimativa -= 1
+    
+    # if (escuro_pctg > 0.7):
+    #     estimativa -= 1
+    # print(e_exata - e_truncada)
+    
+    return estimativa
+
+#-------------------------------------------------------------------------------
+
 def estimar_total(graos):
 
     total = 0
     n_pixels_medio = 0
+    
+    isolados = 0
+    clusters = 0
 
     grudados = []
 
@@ -124,12 +157,20 @@ def estimar_total(graos):
             n_pixels_medio += g.n_pixels
             total += 1
         else:
-            grudados.append(g.n_pixels)
+            grudados.append(g)
+            clusters += 1
+    
+    isolados = total
+    media = n_pixels_medio / total
+    
+    for g in grudados:
+        total += estimar_grudado(g, media)
 
-    n_pixels_medio /= total
-
-    for pixels in grudados:
-        total += round (pixels / n_pixels_medio)
+    # n_pixels_medio /= total
+    
+    print(f'isolados = {isolados}; clusters = {clusters}')
+    # for pixels in grudados:
+    #     total += round (pixels / n_pixels_medio)
 
     return total
 #-------------------------------------------------------------------------------   
@@ -197,8 +238,8 @@ def main ():
     img_out = cv2.cvtColor (img, cv2.COLOR_GRAY2BGR)
 
     img = binariza (img)
-    cv2.imshow ('01 - binarizada', img)
-    cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
+    # cv2.imshow ('01 - binarizada', img)
+    # cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
 
     graos = rotula (img, AREA_MIN)
     n_graos = len (graos)
@@ -213,11 +254,13 @@ def main ():
     for g in graos:
         cor = (0,1,0) if g.isolado else (0,0,1) # Verde para isolados, Vermelho para grudados
         cv2.rectangle (img_out, (g.L, g.T), (g.R, g.B), cor, 1)
+        if g.n_pixels == 981 and g.area == 2312:
+            cv2.rectangle (img_out, (g.L, g.T), (g.R, g.B), (1,0,0), 1)
 
-    cv2.imshow ('02 - out', img_out)
-    cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
-    cv2.waitKey ()
-    cv2.destroyAllWindows ()
+    # cv2.imshow ('02 - out', img_out)
+    # cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
+    # cv2.waitKey ()
+    # cv2.destroyAllWindows ()
 
 
 if __name__ == '__main__':
