@@ -8,17 +8,17 @@
 import sys
 import numpy as np
 import cv2
-from operator import itemgetter
 
 #===============================================================================
 
-INPUT_IMAGE = 'assets/150.bmp'
+INPUT_IMAGE = 'assets/114.bmp'
 AREA_MIN = 25
 ALPHA = 3.0
 MAX_IT = 20
 JANELA_PERCENT = 0.15 #porcentagem em relacao ao tamanho da imagem
 ARROZ = 1
 FUNDO = 0
+TAXA_DESVIO = 2.0
 #===============================================================================
 
 class Grao:
@@ -45,7 +45,7 @@ def binariza (img):
     
     buffer = cv2.normalize(buffer, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
-    cv2.imshow ('03 - diff', buffer)
+    # cv2.imshow ('03 - diff', buffer)
     cv2.imwrite ('out/03 - diff.png', (buffer*255).astype(np.uint8))
     
     img_binarizada = cv2.threshold((buffer * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
@@ -118,18 +118,28 @@ def estimar_total(graos):
     n_pixels_medio = 0
 
     grudados = []
+    tamanhos = []
 
     for g in graos:
         if(g.isolado):
             n_pixels_medio += g.n_pixels
             total += 1
+            tamanhos.append(g.n_pixels)
+            
         else:
             grudados.append(g.n_pixels)
+        
+
+        
+    desvio = np.std(tamanhos)
 
     n_pixels_medio /= total
+    
 
     for pixels in grudados:
-        total += round (pixels / n_pixels_medio)
+        # desvio padrao influencia sob dada taxa a estimativa de pixeis de CADA cluster
+        total += round ((pixels + (desvio / 2.0)) / n_pixels_medio)
+
 
     return total
 #-------------------------------------------------------------------------------   
@@ -197,7 +207,7 @@ def main ():
     img_out = cv2.cvtColor (img, cv2.COLOR_GRAY2BGR)
 
     img = binariza (img)
-    cv2.imshow ('01 - binarizada', img)
+    # cv2.imshow ('01 - binarizada', img)
     cv2.imwrite ('out/01 - binarizada.png', (img*255).astype(np.uint8))
 
     graos = rotula (img, AREA_MIN)
@@ -214,7 +224,7 @@ def main ():
         cor = (0,1,0) if g.isolado else (0,0,1) # Verde para isolados, Vermelho para grudados
         cv2.rectangle (img_out, (g.L, g.T), (g.R, g.B), cor, 1)
 
-    cv2.imshow ('02 - out', img_out)
+    # cv2.imshow ('02 - out', img_out)
     cv2.imwrite ('out/02 - out.png', (img_out*255).astype(np.uint8))
     cv2.waitKey ()
     cv2.destroyAllWindows ()
