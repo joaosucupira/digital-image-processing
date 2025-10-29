@@ -10,7 +10,24 @@ import numpy as np
 import cv2
 
 #===============================================================================
-INPUT_IMAGE = 'assets/1.bmp'
+INPUT_IMAGE = 'assets/7.bmp'
+
+
+#===============================================================================
+def nivelVerde(img):
+    
+    imgG = np.zeros(img.shape[:2], dtype=np.float32)
+    # Converte a imagem para um tipo de dado maior (int16) para evitar overflow
+    img_calc = img.astype(np.float32) / 255.0
+    # nivelVerde = Green - vazamento(Blue + Red)
+    nivelVerde = img_calc[:, :, 1] - (img_calc[:, :, 0] + img_calc[:, :, 2])/1.5
+    # Garante que os valores estejam no intervalo [0, 1]
+    imgG = np.clip(nivelVerde, 0, 1)
+    imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_64F)
+
+    return imgG
+
+#===============================================================================
 
 #===============================================================================
 def main():
@@ -19,9 +36,12 @@ def main():
     if img is None:
         print ('Erro abrindo a imagem.\n')
         sys.exit ()
+    
+    cv2.imshow ('original', (img).astype(np.uint8))
+    cv2.waitKey ()
 
-    cv2.imshow ('0 - img', (img).astype(np.uint8))
-    cv2.imwrite ('out/0 - img.png', (img).astype(np.uint8))
+    imgG = nivelVerde(img)
+    cv2.imshow ('nivelVerde', (imgG*255).astype(np.uint8))
     cv2.waitKey ()
     cv2.destroyAllWindows ()
 
