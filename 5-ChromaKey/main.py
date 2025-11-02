@@ -10,25 +10,32 @@ import numpy as np
 import cv2
 
 #===============================================================================
-INPUT_IMAGE = 'assets/7.bmp'
+INPUT_IMAGE = 'assets/5.bmp'
 
 
 #===============================================================================
 def nivelVerde(img):
     
     imgG = np.zeros(img.shape[:2], dtype=np.float32)
-    # Converte a imagem para um tipo de dado maior (int16) para evitar overflow
     img_calc = img.astype(np.float32) / 255.0
-    # nivelVerde = Green - vazamento(Blue + Red)
-    nivelVerde = img_calc[:, :, 1] - (img_calc[:, :, 0] + img_calc[:, :, 2])/1.5
-    # Garante que os valores estejam no intervalo [0, 1]
-    imgG = np.clip(nivelVerde, 0, 1)
-    imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_64F)
+    
+    #Gera o nivel de verde de cada pixel [0(muito verde),2(sem verde)]
+    imgG = 1 + np.maximum(img_calc[:, :, 0], img_calc[:, :, 2]) - img_calc[:,:,1]
+    
+    cv2.imshow ('nivelVerde', (imgG*255/2.0).astype(np.uint8))
+    cv2.waitKey ()
 
     return imgG
 
 #===============================================================================
+def bordas(imgG):
 
+    buffer = np.clip(imgG, 0, 1)
+    buffer = np.where(buffer < 0.9, 0, 1)
+    cv2.imshow ('clip', (buffer*255).astype(np.uint8))
+    cv2.waitKey ()
+    canny = cv2.Canny((buffer*255).astype(np.uint8), 40, 80, L2gradient= 1)
+    return canny
 #===============================================================================
 def main():
 
@@ -41,8 +48,12 @@ def main():
     cv2.waitKey ()
 
     imgG = nivelVerde(img)
-    cv2.imshow ('nivelVerde', (imgG*255).astype(np.uint8))
+
+    borda = bordas(imgG)
+    cv2.imshow('bordas', (borda).astype(np.uint8))
     cv2.waitKey ()
+
+    
     cv2.destroyAllWindows ()
 
 if __name__ == '__main__':
