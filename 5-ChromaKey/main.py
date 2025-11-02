@@ -52,7 +52,7 @@ def aniquilaVerde(img, mascara):
     aniquilado[:, :, 1] *= mascara
     
     # Escurece o canal de saturação 
-    aniquilado[:, :, 2] = 0.0
+    # aniquilado[:, :, 2] = 0.0
 
     # ANTES de usar no loop para garantir consistência de tipo e cor.
     aniquilado_bgr = cv2.cvtColor((aniquilado * 255.0).astype(np.uint8), cv2.COLOR_HLS2BGR) 
@@ -63,8 +63,8 @@ def aniquilaVerde(img, mascara):
     # Preenche nova imagem apenas com pixeis do intervalo desejado
     for y in range(altura):
         for x in range(largura):
-            if (mascara[y, x] >= LIMIAR) and (mascara[y, x] <= 1):
-                # Atribuição agora usa a variável BGR/uint8
+            # CORREÇÃO: Copie o pixel original onde a máscara é BAIXA (abaixo do LIMIAR)
+            if (mascara[y, x] < LIMIAR):
                 aniquilado_bgr[y, x] = img[y, x]
                
     return aniquilado_bgr 
