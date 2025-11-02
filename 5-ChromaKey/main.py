@@ -27,16 +27,26 @@ BACKGROUND_IMAGE = 'assets/cachorro_boboca.jpg'
 #===============================================================================
 def nivelVerde(img):
     
-    imgG = np.zeros(img.shape[:2], dtype=np.float32)
-    # Converte a imagem para um tipo de dado maior (int16) para evitar overflow
-    img_calc = img.astype(np.float32) / 255.0
-    # nivelVerde = Green - vazamento(Blue + Red)
-    nivelVerde = img_calc[:, :, 1] - (img_calc[:, :, 0] + img_calc[:, :, 2])/1.5
-    # Garante que os valores estejam no intervalo [0, 1]
-    imgG = np.clip(nivelVerde, 0, 1)
-    imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_64F)
+    # imgG = np.zeros(img.shape[:2], dtype=np.float32)
+    # # Converte a imagem para um tipo de dado maior (int16) para evitar overflow
+    # img_calc = img.astype(np.float32) / 255.0
+    # # nivelVerde = Green - vazamento(Blue + Red)
+    # nivelVerde = img_calc[:, :, 1] - (img_calc[:, :, 0] + img_calc[:, :, 2]) / 1.5
+    # # Garante que os valores estejam no intervalo [0, 1]
+    # imgG = np.clip(nivelVerde, 0, 1)
+    # imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_64F)
+    
+    # mascara = 1 - imgG
+    
+    # Tentei melhorar o calculo para nao ter as bordas verdes
+    imgG = img.astype(np.float32) / 255.0
+    
+    mascara = imgG[:,:,1] - np.maximum(imgG[:,:,0], imgG[:,:,2])
+    mascara = np.clip(mascara, 0, 1)
+    mascara = cv2.normalize(mascara, None, 0, 1, cv2.NORM_MINMAX)
+    mascara = 1 - mascara
 
-    return 1 - imgG
+    return mascara
 
 #===============================================================================
 
@@ -49,25 +59,24 @@ def aniquilaVerde(img, mascara):
     aniquilado = aniquilado.astype(np.float32) / 255.0
     
     # Aplica a mascara no canal de luminosidade 
-    aniquilado[:, :, 1] *= mascara
+    aniquilado[:, :, 1] *= (1 - mascara)
     
     # Escurece o canal de saturação 
-    # aniquilado[:, :, 2] = 0.0
+    aniquilado[:, :, 2] = 0
 
     # ANTES de usar no loop para garantir consistência de tipo e cor.
-    aniquilado_bgr = cv2.cvtColor((aniquilado * 255.0).astype(np.uint8), cv2.COLOR_HLS2BGR) 
+    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
     
     altura, largura = mascara.shape
-    
     
     # Preenche nova imagem apenas com pixeis do intervalo desejado
     for y in range(altura):
         for x in range(largura):
-            # CORREÇÃO: Copie o pixel original onde a máscara é BAIXA (abaixo do LIMIAR)
-            if (mascara[y, x] < LIMIAR):
-                aniquilado_bgr[y, x] = img[y, x]
+            if (mascara[y, x] >= LIMIAR) and (mascara[y, x] <= 1):
+                # Atribuição agora usa a variável BGR/uint8
+                aniquilado[y, x] = img[y, x]
                
-    return aniquilado_bgr 
+    return aniquilado
 
 #===============================================================================
 
@@ -114,13 +123,12 @@ def chromaVerde(img, mascara):
     altura = img.shape[0]
     largura = img.shape[1]
     
-    chroma_key = np.zeros_like(img, dtype=np.float32) 
+    chroma_key = np.zeros_like(img) 
     
     fundo = _trataFundo(img)
     
     for y in range(altura):
         for x in range(largura):
-
              chroma_key[y, x] = (img[y, x] * mascara[y, x]) + (fundo[y, x] * (1 - mascara[y, x]))
              
     return chroma_key
@@ -129,9 +137,9 @@ def chromaVerde(img, mascara):
 #===============================================================================
 def main():
 
-    for i in range(1):
+    for i in range(len(INPUT_IMAGE)):
         
-        img = cv2.imread(INPUT_IMAGE[i], cv2.IMREAD_COLOR) # Corrigido cv2.IMREAD_COLOR_BGR
+        img = cv2.imread(INPUT_IMAGE[i], cv2.IMREAD_COLOR) 
         
         if img is None:
             print ('Erro abrindo a imagem.\n')
@@ -139,20 +147,16 @@ def main():
         
         img = img.astype(np.float32) / 255.0 
 
-        imgG = nivelVerde(img)
+        verde = nivelVerde(img)
         
-        img_A = aniquilaVerde(img, imgG) 
+        dessaturado = aniquilaVerde(img, verde) 
         
-        img_A = img_A.astype(np.float32) / 255.0 
+        chroma_key = chromaVerde(dessaturado, verde) 
         
-        img_C = chromaVerde(img_A, imgG) 
+        img_display = chroma_key
+        cv2.imwrite ('chromed_%d.png' % i, (chroma_key * 255).astype(np.uint8))
+        cv2.imshow ('chroma_key', (img_display * 255).astype(np.uint8)) 
         
-        
-        img_display = img_C
-        
-        cv2.imwrite('chroma_%d.png'% i, (img_display * 255).astype(np.uint8))
-        cv2.imshow ('chroma', (img_display * 255).astype(np.uint8)) 
-
         cv2.waitKey ()
         cv2.destroyAllWindows ()
 
