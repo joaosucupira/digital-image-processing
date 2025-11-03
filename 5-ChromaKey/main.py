@@ -32,7 +32,7 @@ def nivelVerde(img):
     #Gera o nivel de verde de cada pixel [0(muito verde),2(sem verde)]
     imgG = 1 + np.maximum(img[:, :, 0], img[:, :, 2]) - img[:,:,1]
     
-    imG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX)
+    imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX)
     cv2.imshow ('nivelVerde', (imgG*255).astype(np.uint8))
     cv2.waitKey ()
 
@@ -49,7 +49,7 @@ def aniquilaVerde(img, mascara):
     aniquilado = aniquilado.astype(np.float32) / 255.0
 
     # Aplica a mascara no canal de luminosidade
-    aniquilado[:, :, 1] *= (1 - mascara)
+    aniquilado[:, :, 1] *= mascara
 
     # Escurece o canal de saturação
     aniquilado[:, :, 2] = 0
@@ -60,6 +60,9 @@ def aniquilaVerde(img, mascara):
     mascara_nao_verde = mascara >= LIMIAR
     # Usa a máscara para copiar os pixels da imagem original para a imagem aniquilada de forma vetorizada
     aniquilado[mascara_nao_verde] = img[mascara_nao_verde]
+
+    cv2.imshow ('semVerde', (aniquilado*255).astype(np.uint8))
+    cv2.waitKey ()
 
     return aniquilado
 
