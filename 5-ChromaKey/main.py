@@ -51,18 +51,14 @@ def aniquilaVerde(img, mascara):
     # Aplica a mascara no canal de luminosidade
     aniquilado[:, :, 1] *= mascara
 
-    # Escurece o canal de saturação
-    aniquilado[:, :, 2] = 0
-
     aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
-
+    
+    cv2.imshow ('semVerde', (aniquilado*255).astype(np.uint8))
+    cv2.waitKey ()
     # Cria uma máscara booleana para os pixels não-verdes
     mascara_nao_verde = mascara >= LIMIAR
     # Usa a máscara para copiar os pixels da imagem original para a imagem aniquilada de forma vetorizada
     aniquilado[mascara_nao_verde] = img[mascara_nao_verde]
-
-    cv2.imshow ('semVerde', (aniquilado*255).astype(np.uint8))
-    cv2.waitKey ()
 
     return aniquilado
 
