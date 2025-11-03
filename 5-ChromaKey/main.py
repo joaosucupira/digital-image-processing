@@ -25,6 +25,7 @@ INPUT_IMAGE = [
 BACKGROUND_IMAGE = 'assets/cachorro_boboca.jpg'
 
 #===============================================================================
+
 def nivelVerde(img):
     
     imgG = np.zeros(img.shape[:2], dtype=np.float32)
@@ -32,18 +33,17 @@ def nivelVerde(img):
     #Gera o nivel de verde de cada pixel [0(muito verde),2(sem verde)]
     imgG = 1 + np.maximum(img[:, :, 0], img[:, :, 2]) - img[:,:,1]
     
-    imgG = cv2.normalize(imgG, None, 0, 1, cv2.NORM_MINMAX)
+    imgG = cv2.normalize(imgG, None, 0, 2, cv2.NORM_MINMAX)
+    imgG = np.clip(imgG, 0, 1)
+    imgG = np.where(imgG < 0.9, 0, 1)
     cv2.imshow ('nivelVerde', (imgG*255).astype(np.uint8))
     cv2.waitKey ()
 
     return imgG
-
 #===============================================================================
 
 # Aplica a máscara criada a partir de dado limiar
-
 def aniquilaVerde(img, mascara):
-    LIMIAR = 0.7
 
     aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     aniquilado = aniquilado.astype(np.float32) / 255.0
@@ -52,13 +52,9 @@ def aniquilaVerde(img, mascara):
     aniquilado[:, :, 1] *= mascara
 
     aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
-    
+
     cv2.imshow ('semVerde', (aniquilado*255).astype(np.uint8))
     cv2.waitKey ()
-    # Cria uma máscara booleana para os pixels não-verdes
-    mascara_nao_verde = mascara >= LIMIAR
-    # Usa a máscara para copiar os pixels da imagem original para a imagem aniquilada de forma vetorizada
-    aniquilado[mascara_nao_verde] = img[mascara_nao_verde]
 
     return aniquilado
 
@@ -121,7 +117,7 @@ def chromaVerde(img, mascara):
 #===============================================================================
 def main():
 
-    for i in range(1):
+    for i in range(9):
         
         img = cv2.imread(INPUT_IMAGE[i], cv2.IMREAD_COLOR) 
         
