@@ -32,11 +32,12 @@ def nivelVerde(img):
     
     #Gera o nivel de verde de cada pixel [0(muito verde),2(sem verde)]
     imgG = 1 + np.maximum(img[:, :, 0], img[:, :, 2]) - img[:,:,1]
-    
-    imgG = cv2.normalize(imgG, None, 0, 2, cv2.NORM_MINMAX)
-    imgG = np.clip(imgG, 0, 1)
-    imgG = np.where(imgG < 0.9, 0, 1)
-    cv2.imshow ('nivelVerde', (imgG*255).astype(np.uint8))
+    #Volta para o range [0,1]
+    imgG = cv2.normalize(imgG, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    #Ilustrativo
+    img_binarizada = cv2.threshold((imgG * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    cv2.imshow ('mascaraBinarizada', (img_binarizada).astype(np.uint8))
     cv2.waitKey ()
 
     return imgG
@@ -52,9 +53,6 @@ def aniquilaVerde(img, mascara):
     aniquilado[:, :, 1] *= mascara
 
     aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
-
-    cv2.imshow ('semVerde', (aniquilado*255).astype(np.uint8))
-    cv2.waitKey ()
 
     return aniquilado
 
@@ -117,7 +115,7 @@ def chromaVerde(img, mascara):
 #===============================================================================
 def main():
 
-    for i in range(9):
+    for i in range(1):
         
         img = cv2.imread(INPUT_IMAGE[i], cv2.IMREAD_COLOR) 
         
