@@ -26,7 +26,7 @@ BACKGROUND_IMAGE = 'assets/cachorro_boboca.jpg'
 
 #===============================================================================
 
-def nivelVerde(img):
+def geraNivelVerde(img):
     
     imgG = np.zeros(img.shape[:2], dtype=np.float32)
     
@@ -40,21 +40,16 @@ def nivelVerde(img):
     cv2.imshow ('mascaraBinarizada', (img_binarizada).astype(np.uint8))
     cv2.waitKey ()
 
-    return imgG
+    return img_binarizada.astype(np.float32) / 255.0
+
 #===============================================================================
 
-# Aplica a máscara criada a partir de dado limiar
-def aniquilaVerde(img, mascara):
 
-    aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-    aniquilado = aniquilado.astype(np.float32) / 255.0
+def aniquilaVerde(img, alpha):
 
-    # Aplica a mascara no canal de luminosidade
-    aniquilado[:, :, 1] *= mascara
+    alpha3C = alpha[:,:,None]
 
-    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
-
-    return aniquilado
+    return img * alpha3C
 
 #===============================================================================
 
@@ -79,8 +74,6 @@ def _trataFundo(img):
     margem_inferior = altura_img - altura_fundo if (altura_img > altura_fundo) else 0
     margem_direita = largura_img - largura_fundo if (largura_img > largura_fundo) else 0
     
-    # Cria nova para ajudar do fundo à imagem
-    
     fundo_t = cv2.copyMakeBorder(
         fundo,
         0,
@@ -90,32 +83,25 @@ def _trataFundo(img):
         cv2.BORDER_REFLECT
     )
     
-    return fundo_t
+    return fundo_t[:altura_img, :largura_img]
     
 
 #===============================================================================
 
 
-def chromaVerde(img, mascara):
+def chroma(frente, fundo, alpha):
     
-    altura = img.shape[0]
-    largura = img.shape[1]
-    
-    chroma_key = np.zeros_like(img) 
-    
-    fundo = _trataFundo(img)
-    
-    for y in range(altura):
-        for x in range(largura):
-             chroma_key[y, x] = (img[y, x] * mascara[y, x]) + (fundo[y, x] * (1 - mascara[y, x]))
-             
+    alpha3C = alpha[:,:,None]
+
+    chroma_key = frente + (fundo * (1 - alpha3C))
+
     return chroma_key
     
 
 #===============================================================================
 def main():
 
-    for i in range(1):
+    for i in range(len(INPUT_IMAGE)):
         
         img = cv2.imread(INPUT_IMAGE[i], cv2.IMREAD_COLOR) 
         
@@ -124,16 +110,15 @@ def main():
             sys.exit ()
         
         img = img.astype(np.float32) / 255.0 
-
-        verde = nivelVerde(img)
         
-        dessaturado = aniquilaVerde(img, verde) 
+        fundo = _trataFundo(img)
+        alpha = geraNivelVerde(img)
+        frente = aniquilaVerde(img, alpha)
         
-        chroma_key = chromaVerde(dessaturado, verde) 
+        chroma_key = chroma(frente, fundo, alpha) 
         
-        img_display = chroma_key
         cv2.imwrite ('out/chromed_%d.png' % i, (chroma_key * 255).astype(np.uint8))
-        cv2.imshow ('chroma_key', (img_display * 255).astype(np.uint8)) 
+        cv2.imshow ('chroma_key', (chroma_key * 255).astype(np.uint8)) 
         
         cv2.waitKey ()
         cv2.destroyAllWindows ()
