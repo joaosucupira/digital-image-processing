@@ -23,6 +23,7 @@ INPUT_IMAGE = [
 ]
 
 BACKGROUND_IMAGE = 'assets/cachorro_boboca.jpg'
+VERDE = 120.0
 
 #===============================================================================
 
@@ -35,25 +36,41 @@ def geraNivelVerde(img):
     #Volta para o range [0,1]
     imgG = cv2.normalize(imgG, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
-    #Ilustrativo
-    img_binarizada = cv2.threshold((imgG * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    cv2.imshow ('mascaraBinarizada', (img_binarizada).astype(np.uint8))
+    cv2.imshow ('NivelVerde', (imgG*255.0).astype(np.uint8))
     cv2.waitKey ()
 
-    return img_binarizada.astype(np.float32) / 255.0
+    return imgG
 
 #===============================================================================
 
 
 def aniquilaVerde(img, alpha):
 
-    alpha3C = alpha[:,:,None]
+    margem = 0.08
 
-    return img * alpha3C
+    threshold = cv2.threshold((alpha * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0] / 255.0
+
+    limearFundo  = np.clip(threshold - margem, 0.0, 1.0)   # fundo
+    limearFrente  = np.clip(threshold + margem, 0.0, 1.0)   # frente
+
+    matte = np.clip(alpha, limearFundo, limearFrente).astype(np.float32)
+    matte = cv2.normalize(matte, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    matte = np.clip(np.nan_to_num(matte, nan=0.0), 0.0, 1.0).astype(np.float32)
+    matte = np.power(matte, 0.8)
+
+    img_frente = img * matte[:, :, None]
+
+    # # debug:
+    print("w[mean,max]=", float(matte.mean()), float(matte.max()))
+    cv2.imshow('matte', (matte*255).astype(np.uint8))
+    cv2.imshow('frente', (img_frente*255).astype(np.uint8)); 
+    cv2.waitKey(1)
+
+    return img_frente, matte
 
 #===============================================================================
 
-# 
 def _trataFundo(img):
     
     # Fundo que vamos usar para preencher o verde
@@ -90,10 +107,8 @@ def _trataFundo(img):
 
 
 def chroma(frente, fundo, alpha):
-    
-    alpha3C = alpha[:,:,None]
 
-    chroma_key = frente + (fundo * (1 - alpha3C))
+    chroma_key = frente + (fundo * (1 - alpha[:,:,None]))
 
     return chroma_key
     
@@ -113,7 +128,7 @@ def main():
         
         fundo = _trataFundo(img)
         alpha = geraNivelVerde(img)
-        frente = aniquilaVerde(img, alpha)
+        frente,alpha = aniquilaVerde(img, alpha)
         
         chroma_key = chroma(frente, fundo, alpha) 
         
