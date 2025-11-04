@@ -23,7 +23,6 @@ INPUT_IMAGE = [
 ]
 
 BACKGROUND_IMAGE = 'assets/cachorro_boboca.jpg'
-VERDE = 120.0
 
 #===============================================================================
 
@@ -43,38 +42,36 @@ def geraNivelVerde(img):
 #===============================================================================
 
 
-def aniquilaVerde(img, alpha):
+def aniquilaVerde(img, verdice):
     
     margem = 0.1
-    sigma = 0.5
+    sigma = 1
 
-    # 2) Suavizar
-    alpha_suave = cv2.GaussianBlur(alpha, (0, 0), sigma)
+    #Borra
+    verdice_borrada = cv2.GaussianBlur(verdice, (0, 0), sigma)
 
-    # 3) Otsu precisa de 8 bits; converte só para o cálculo do limiar
-    t = cv2.threshold((alpha_suave * 255.0).astype(np.uint8), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[0]/ 255.0
+    otsu = cv2.threshold((verdice_borrada * 255.0).astype(np.uint8), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[0]/ 255.0
 
-    # 4) Smoothstep
-    t_bg = float(np.clip(t - margem, 0.0, 1.0))
-    t_fg = float(np.clip(t + margem, 0.0, 1.0))
+    #Gera curva suavizada de verdice
+    limearFundo = float(np.clip(otsu - margem, 0.0, 1.0))
+    limearFrente = float(np.clip(otsu + margem, 0.0, 1.0))
+    diff = max(limearFrente - limearFundo, 1e-6)
+    x = np.clip((verdice_borrada - limearFundo) / diff, 0.0, 1.0)
+    verdice = x * x * (3.0 - 2.0 * x)
 
-    den  = max(t_fg - t_bg, 1e-6)
-    x = np.clip((alpha_suave - t_bg) / den, 0.0, 1.0)
-    matte = x * x * (3.0 - 2.0 * x)
+    #Tenta diminuir a verdice das bordas
+    verdice = cv2.GaussianBlur(verdice, (0, 0), sigma)
+    
+    img_frente = img.astype(np.float32) * verdice[:, :, None]
 
-    # 5) Feather leve
-    matte = cv2.GaussianBlur(matte, (0, 0), sigma)
-
-    img_frente = img.astype(np.float32) * matte[:, :, None]
-
+    #Debug
     geraNivelVerde(img_frente)
-
-    print(f"t(otsu)={t:.4f}  matte[mean,max]={float(matte.mean()):.4f},{float(matte.max()):.4f}")
-    cv2.imshow('matte', (matte*255).astype(np.uint8))
+    print(f"t(otsu)={otsu:.4f}  verdice[mean,max]={float(verdice.mean()):.4f},{float(verdice.max()):.4f}")
+    cv2.imshow('verdice', (verdice*255).astype(np.uint8))
     cv2.imshow('frente', np.clip(img_frente*255,0,255).astype(np.uint8))
     cv2.waitKey(1)
 
-    return img_frente, matte
+    return img_frente, verdice
 
 
 #===============================================================================
@@ -114,9 +111,9 @@ def _trataFundo(img):
 #===============================================================================
 
 
-def chroma(frente, fundo, alpha):
+def chroma(frente, fundo, verdice):
 
-    chroma_key = frente + (fundo * (1 - alpha[:,:,None]))
+    chroma_key = frente + (fundo * (1 - verdice[:,:,None]))
 
     return chroma_key
     
@@ -135,10 +132,10 @@ def main():
         img = img.astype(np.float32) / 255.0 
         
         fundo = _trataFundo(img)
-        alpha = geraNivelVerde(img)
-        frente,alpha = aniquilaVerde(img, alpha)
+        verdice = geraNivelVerde(img)
+        frente,verdice = aniquilaVerde(img, verdice)
         
-        chroma_key = chroma(frente, fundo, alpha) 
+        chroma_key = chroma(frente, fundo, verdice) 
         
         cv2.imwrite ('out/chromed_%d.png' % i, (chroma_key * 255).astype(np.uint8))
         cv2.imshow ('chroma_key', (chroma_key * 255).astype(np.uint8)) 
