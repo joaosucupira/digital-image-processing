@@ -29,45 +29,53 @@ VERDE = 120.0
 
 def geraNivelVerde(img):
     
-    imgG = np.zeros(img.shape[:2], dtype=np.float32)
-    
-    #Gera o nivel de verde de cada pixel [0(muito verde),2(sem verde)]
-    imgG = 1 + np.maximum(img[:, :, 0], img[:, :, 2]) - img[:,:,1]
-    #Volta para o range [0,1]
-    imgG = cv2.normalize(imgG, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    img = img.astype(np.float32)
+    b, g, r = img[...,0], img[...,1], img[...,2]
 
-    cv2.imshow ('NivelVerde', (imgG*255.0).astype(np.uint8))
+    verdice = 1 + np.maximum(b,r) - g
+    verdice = np.clip(verdice, 0.0, 1.0)
+
+    cv2.imshow ('NivelVerde', (verdice*255.0).astype(np.uint8))
     cv2.waitKey ()
 
-    return imgG
+    return verdice
 
 #===============================================================================
 
 
 def aniquilaVerde(img, alpha):
+    
+    margem = 0.1
+    sigma = 0.5
 
-    margem = 0.08
+    # 2) Suavizar
+    alpha_suave = cv2.GaussianBlur(alpha, (0, 0), sigma)
 
-    threshold = cv2.threshold((alpha * 255).astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0] / 255.0
+    # 3) Otsu precisa de 8 bits; converte só para o cálculo do limiar
+    t = cv2.threshold((alpha_suave * 255.0).astype(np.uint8), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[0]/ 255.0
 
-    limearFundo  = np.clip(threshold - margem, 0.0, 1.0)   # fundo
-    limearFrente  = np.clip(threshold + margem, 0.0, 1.0)   # frente
+    # 4) Smoothstep
+    t_bg = float(np.clip(t - margem, 0.0, 1.0))
+    t_fg = float(np.clip(t + margem, 0.0, 1.0))
 
-    matte = np.clip(alpha, limearFundo, limearFrente).astype(np.float32)
-    matte = cv2.normalize(matte, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    den  = max(t_fg - t_bg, 1e-6)
+    x = np.clip((alpha_suave - t_bg) / den, 0.0, 1.0)
+    matte = x * x * (3.0 - 2.0 * x)
 
-    matte = np.clip(np.nan_to_num(matte, nan=0.0), 0.0, 1.0).astype(np.float32)
-    matte = np.power(matte, 0.8)
+    # 5) Feather leve
+    matte = cv2.GaussianBlur(matte, (0, 0), sigma)
 
-    img_frente = img * matte[:, :, None]
+    img_frente = img.astype(np.float32) * matte[:, :, None]
 
-    # # debug:
-    print("w[mean,max]=", float(matte.mean()), float(matte.max()))
+    geraNivelVerde(img_frente)
+
+    print(f"t(otsu)={t:.4f}  matte[mean,max]={float(matte.mean()):.4f},{float(matte.max()):.4f}")
     cv2.imshow('matte', (matte*255).astype(np.uint8))
-    cv2.imshow('frente', (img_frente*255).astype(np.uint8)); 
+    cv2.imshow('frente', np.clip(img_frente*255,0,255).astype(np.uint8))
     cv2.waitKey(1)
 
     return img_frente, matte
+
 
 #===============================================================================
 
