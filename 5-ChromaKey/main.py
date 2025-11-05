@@ -33,9 +33,8 @@ def geraNivelVerde(img):
 
     verdice = 1 + np.maximum(b,r) - g
     verdice = np.clip(verdice, 0.0, 1.0)
-
+    
     cv2.imshow ('NivelVerde', (verdice*255.0).astype(np.uint8))
-    cv2.waitKey ()
 
     return verdice
 
@@ -43,35 +42,39 @@ def geraNivelVerde(img):
 
 def aniquilaVerde(img, verdice):
     
-    margem = 0.1
-    sigma = 1
+    alpha = verdice
+    alpha = cv2.normalize(verdice, None, 0.0, 1.0, cv2.NORM_MINMAX)
+    alpha = np.where(alpha < 1e-5, 0.0, alpha)
 
-    #Borra
-    verdice_borrada = cv2.GaussianBlur(verdice, (0, 0), sigma)
+    #Erode, Dilata e borra (um pouco)
+    k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+    alpha = cv2.erode(alpha, k)
+    alpha = cv2.dilate(alpha, k)
+    alpha = cv2.GaussianBlur(alpha, (0,0), 0.8)
 
-    otsu = cv2.threshold((verdice_borrada * 255.0).astype(np.uint8), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[0]/ 255.0
-
-    #Gera curva suavizada de verdice
-    limearFundo = float(np.clip(otsu - margem, 0.0, 1.0))
-    limearFrente = float(np.clip(otsu + margem, 0.0, 1.0))
-    diff = max(limearFrente - limearFundo, 1e-6)
-    x = np.clip((verdice_borrada - limearFundo) / diff, 0.0, 1.0)
-    verdice = x * x * (3.0 - 2.0 * x)
-
-    #Tenta diminuir a verdice das bordas
-    verdice = cv2.GaussianBlur(verdice, (0, 0), sigma)
+    alpha = np.clip(np.power(alpha, 2), 0.0, 1.0)
     
-    img_frente = img.astype(np.float32) * verdice[:, :, None]
+    cv2.imshow ('NivelVerde', (alpha*255.0).astype(np.uint8))
 
-    #Debug
-    geraNivelVerde(img_frente)
-    print(f"t(otsu)={otsu:.4f}  verdice[mean,max]={float(verdice.mean()):.4f},{float(verdice.max()):.4f}")
-    cv2.imshow('verdice', (verdice*255).astype(np.uint8))
-    cv2.imshow('frente', np.clip(img_frente*255,0,255).astype(np.uint8))
-    cv2.waitKey(1)
+    aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+    
+    # Aplica a verdice no canal de luminosidade 
+    aniquilado[:, :, 1] *= alpha
+    
+    # Aplica a verdice no canal de  saturacao
+    aniquilado[:, :, 2] *= alpha
 
-    return img_frente, verdice
+    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
 
+    ##Apartir daqui sabemos que o verde que restou estao dentro dos objetos(tem que suavizar eles)
+     #Deixar esses verdes cinza claro/escuro ou preto ( de acordo com alguma logica)
+     #Dessa vez acredito que temos que olhar para a cor(RGB) da imagem original e aplicar a correcao
+     #Talvez destribuir metade do verde do canal G para o R e a outra para o B
+
+    cv2.imshow ('Aniquilado', (aniquilado * 255.0).astype(np.uint8))
+    cv2.waitKey (1)
+
+    return aniquilado
 
 #===============================================================================
 
@@ -112,7 +115,7 @@ def _trataFundo(img):
 
 def chroma(frente, fundo, verdice):
 
-    chroma_key = frente + (fundo * (1 - verdice[:,:,None]))
+    chroma_key = frente*verdice[:,:,None] + (fundo * (1 - verdice[:,:,None]))
 
     return chroma_key
     
@@ -127,12 +130,14 @@ def main():
         if img is None:
             print ('Erro abrindo a imagem.\n')
             sys.exit ()
-        
+
+        cv2.imshow('Original', img.astype(np.uint8))
+
         img = img.astype(np.float32) / 255.0 
         
         fundo = _trataFundo(img)
         verdice = geraNivelVerde(img)
-        frente,verdice = aniquilaVerde(img, verdice)
+        frente = aniquilaVerde(img, verdice)
         
         chroma_key = chroma(frente, fundo, verdice) 
         
