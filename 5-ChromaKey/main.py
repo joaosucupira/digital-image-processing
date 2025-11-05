@@ -34,7 +34,7 @@ def geraNivelVerde(img):
     verdice = 1 + np.maximum(b,r) - g
     verdice = np.clip(verdice, 0.0, 1.0)
     
-    cv2.imshow ('NivelVerde', (verdice*255.0).astype(np.uint8))
+    #cv2.imshow ('NivelVerde', (verdice*255.0).astype(np.uint8))
 
     return verdice
 
@@ -54,7 +54,7 @@ def aniquilaVerde(img, verdice):
 
     alpha = np.clip(np.power(alpha, 2), 0.0, 1.0)
     
-    cv2.imshow ('NivelVerde', (alpha*255.0).astype(np.uint8))
+    #cv2.imshow ('NivelVerde', (alpha*255.0).astype(np.uint8))
 
     aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     
@@ -71,8 +71,17 @@ def aniquilaVerde(img, verdice):
      #Dessa vez acredito que temos que olhar para a cor(RGB) da imagem original e aplicar a correcao
      #Talvez destribuir metade do verde do canal G para o R e a outra para o B
 
-    cv2.imshow ('Aniquilado', (aniquilado * 255.0).astype(np.uint8))
-    cv2.waitKey (1)
+    alpha = geraNivelVerde(aniquilado.astype(np.float32))
+    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_BGR2HLS)
+    aniquilado = aniquilado.astype(np.float32)
+    
+    aniquilado[:, :, 1] *= np.where(alpha<1, alpha, 1)
+    aniquilado[:, :, 2] *= np.where(alpha<1, 0, 1)
+    
+    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
+
+    #cv2.imshow ('Aniquilado', (alpha * 255.0).astype(np.uint8))
+    #cv2.waitKey (1)
 
     return aniquilado
 
@@ -131,7 +140,7 @@ def main():
             print ('Erro abrindo a imagem.\n')
             sys.exit ()
 
-        cv2.imshow('Original', img.astype(np.uint8))
+        #cv2.imshow('Original', img.astype(np.uint8))
 
         img = img.astype(np.float32) / 255.0 
         
