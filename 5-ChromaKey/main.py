@@ -33,57 +33,32 @@ def geraNivelVerde(img):
 
     verdice = 1 + np.maximum(b,r) - g
     verdice = np.clip(verdice, 0.0, 1.0)
-    
-    #cv2.imshow ('NivelVerde', (verdice*255.0).astype(np.uint8))
 
     return verdice
 
 #===============================================================================
 
 def aniquilaVerde(img, verdice):
-    
-    alpha = verdice
-    alpha = cv2.normalize(verdice, None, 0.0, 1.0, cv2.NORM_MINMAX)
-    alpha = np.where(alpha < 1e-5, 0.0, alpha)
 
-    #Erode, Dilata e borra (um pouco)
-    k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-    alpha = cv2.erode(alpha, k)
-    alpha = cv2.dilate(alpha, k)
-    alpha = cv2.GaussianBlur(alpha, (0,0), 0.8)
+    alpha = cv2.normalize(verdice, None, 0, 1, cv2.NORM_MINMAX)
+    alpha = np.where(alpha < 1e-5, 0, alpha)
+    alpha = np.clip(alpha*1.5 - 0.5, 0, 1)#aumenta contraste
 
-    alpha = np.clip(np.power(alpha, 2), 0.0, 1.0)
-    
-    #cv2.imshow ('NivelVerde', (alpha*255.0).astype(np.uint8))
+    aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float32)
 
-    aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-    
-    # Aplica a verdice no canal de luminosidade 
-    aniquilado[:, :, 1] *= alpha
-    
-    # Aplica a verdice no canal de  saturacao
-    aniquilado[:, :, 2] *= alpha
-
+    #Saturacao
+    aniquilado[:,:,2] *= alpha
     aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
-
-    ##Apartir daqui sabemos que o verde que restou estao dentro dos objetos(tem que suavizar eles)
-     #Deixar esses verdes cinza claro/escuro ou preto ( de acordo com alguma logica)
-     #Dessa vez acredito que temos que olhar para a cor(RGB) da imagem original e aplicar a correcao
-     #Talvez destribuir metade do verde do canal G para o R e a outra para o B
-
-    alpha = geraNivelVerde(aniquilado.astype(np.float32))
-    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_BGR2HLS)
-    aniquilado = aniquilado.astype(np.float32)
     
-    aniquilado[:, :, 1] *= np.where(alpha<1, alpha, 1)
-    aniquilado[:, :, 2] *= np.where(alpha<1, 0, 1)
+    alpha2 = geraNivelVerde(aniquilado.astype(np.float32))
+    aniquilado[:,:,1] = np.where(alpha2 < 1, aniquilado[:,:,1] - (1-alpha2),  aniquilado[:,:,1])
+
+    alpha = np.where((alpha2 < 1), np.clip(alpha + (1 - alpha2), 0, 1), alpha)
     
-    aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
+    cv2.imshow('alpha', (alpha* 255).astype(np.uint8))
+    #cv2.imshow('aniquilado', (aniquilado * 255).astype(np.uint8))
 
-    #cv2.imshow ('Aniquilado', (alpha * 255.0).astype(np.uint8))
-    #cv2.waitKey (1)
-
-    return aniquilado
+    return aniquilado, alpha
 
 #===============================================================================
 
@@ -140,13 +115,10 @@ def main():
             print ('Erro abrindo a imagem.\n')
             sys.exit ()
 
-        #cv2.imshow('Original', img.astype(np.uint8))
-
         img = img.astype(np.float32) / 255.0 
-        
         fundo = _trataFundo(img)
         verdice = geraNivelVerde(img)
-        frente = aniquilaVerde(img, verdice)
+        frente,verdice = aniquilaVerde(img, verdice)
         
         chroma_key = chroma(frente, fundo, verdice) 
         
