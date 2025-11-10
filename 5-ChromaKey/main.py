@@ -54,7 +54,8 @@ def aniquilaVerde(img, verdice):
     aniquilado[:,:,1] = np.where(alpha2 < 1, aniquilado[:,:,1] - (1-alpha2),  aniquilado[:,:,1])
 
     alpha = np.where((alpha2 < 1), np.clip(alpha + (1 - alpha2), 0, 1), alpha)
-    
+    alpha = np.clip(alpha*1.5 - 0.2, 0, 1) #aumenta contraste
+
     cv2.imshow('alpha', (alpha* 255).astype(np.uint8))
     #cv2.imshow('aniquilado', (aniquilado * 255).astype(np.uint8))
 
