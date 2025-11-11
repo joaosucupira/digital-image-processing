@@ -42,22 +42,29 @@ def aniquilaVerde(img, verdice):
 
     alpha = cv2.normalize(verdice, None, 0, 1, cv2.NORM_MINMAX)
     alpha = np.where(alpha < 1e-5, 0, alpha)
-    alpha = np.clip(alpha*1.5 - 0.5, 0, 1)#aumenta contraste
+
+    alpha = cv2.GaussianBlur(alpha, (0, 0), 0.5)
+    #aumenta contraste
+    alpha = np.clip(alpha*2 - 0.6, 0, 1)
+    alpha = np.power(alpha, 2)
+
+    alpha_u8 = (alpha * 255).astype(np.uint8)
+    alpha_u8 = cv2.dilate(alpha_u8, np.ones((3, 3), np.uint8), iterations=1)
+    alpha_u8 = cv2.erode(alpha_u8, np.ones((3, 3), np.uint8), iterations=1)
+    alpha = alpha_u8.astype(np.float32) / 255.0
 
     aniquilado = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float32)
 
     #Saturacao
     aniquilado[:,:,2] *= alpha
+    aniquilado[:,:,1] *= alpha
     aniquilado = cv2.cvtColor(aniquilado, cv2.COLOR_HLS2BGR)
     
-    alpha2 = geraNivelVerde(aniquilado.astype(np.float32))
-    aniquilado[:,:,1] = np.where(alpha2 < 1, aniquilado[:,:,1] - (1-alpha2),  aniquilado[:,:,1])
-
-    alpha = np.where((alpha2 < 1), np.clip(alpha + (1 - alpha2), 0, 1), alpha)
-    alpha = np.clip(alpha*1.5 - 0.2, 0, 1) #aumenta contraste
+    spill = 1 - geraNivelVerde(aniquilado.astype(np.float32))
+    aniquilado[:,:,1] -= spill
 
     cv2.imshow('alpha', (alpha* 255).astype(np.uint8))
-    #cv2.imshow('aniquilado', (aniquilado * 255).astype(np.uint8))
+    cv2.imshow('aniquilado', (aniquilado * 255).astype(np.uint8))
 
     return aniquilado, alpha
 
