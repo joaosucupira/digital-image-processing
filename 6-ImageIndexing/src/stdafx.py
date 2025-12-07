@@ -1,5 +1,6 @@
 import os
 import cv2 #type:ignore
+from pathlib import Path
 from abc import ABC, abstractmethod
 
 DATASET_PATH = 'C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img'

@@ -7,4 +7,4 @@ C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco1.png,
 C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco2.png,
 C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco3.png,
 C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco4.png,
-C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco5.png,
+C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img\macaco5.png
