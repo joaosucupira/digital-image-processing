@@ -1,15 +1,18 @@
 from stdafx import *
-from Descriptor import Descriptor
+from ColorHistogram import ColorHistogram
+from LocalBinaryPattern import LocalBinaryPattern
+from HOG import HOG
 
 class App:
     def __init__(self, dataset=DATASET_PATH, input_image=INPUT_PATH, descriptors=DESCRIPTORS_PATH):
         self.descriptors = []
-        self.similarities = []
+
         self.data_path = dataset
         self.input_path = input_image
         self.desc_path = descriptors
         self.execute()
 
+    # BASE METHODS
 
     # register in txt file the descriptor information for the next run
     def save_descriptors(self, source: str, dest: str) -> None:
@@ -32,7 +35,6 @@ class App:
             desc.save_info(dest, FILENAME)
             idx+=1
 
-
     # create previous Descriptor instances from the descriptors data folder 
     def retrieve_descriptors(self, source: str, filename:str) -> None:
         descriptors = os.path.join(source, filename)
@@ -45,17 +47,29 @@ class App:
 
     # rank up similarities between each descriptor
     def compare_similarities(self):
-        for d in self.descriptors:
-            # print(d.image_path)
-            d.show_img()
-
+        pass
     # show up dataset images related to input
     def get_results(self):
         pass
 
-    # script orchestration
+    # TESTS
+    def test_HOG(self):
+        for desc in self.descriptors:
+            hog = HOG(desc.image_path)
+            sum = np.sum(hog.features)
+            # if there are no full zeros and no total dark images then this should print various positive numbers
+            print(sum)
+
+    def test_new_save(self, source: str, dest: str) -> None:
+        pass
+
+    # ORCHESTRATION
     def execute(self):
-        # self.save_descriptors(self.data_path, self.desc_path)
+        self.save_descriptors(self.data_path, self.desc_path)
         self.retrieve_descriptors(self.desc_path, FILENAME)
         self.compare_similarities()
         self.get_results()
+
+        # testing:
+        # self.test_HOG()
+

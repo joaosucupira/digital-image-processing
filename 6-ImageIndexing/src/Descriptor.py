@@ -6,16 +6,18 @@ class Descriptor:
         self.image_path = img_path.replace('\n','')
         self.descriptor = []
         self.last = False
+        self.img = cv2.imread(self.image_path)
 
     def show_img(self):
-        img = cv2.imread(self.image_path)
-        if img is not None:
-            cv2.imshow('descriptor associated img', img)
+        # img = cv2.imread(self.image_path)
+        if self.img is not None:
+            cv2.imshow('descriptor associated img', self.img)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
         else:
             print('Descriptor::show_img -> img is None')
-    
+
+    @abstractmethod
     def save_info(self, dest: str, filename: str) -> None:
         try:
             with open(os.path.join(dest, filename), 'a', encoding='utf-8') as f:
@@ -28,14 +30,20 @@ class Descriptor:
 
         except FileNotFoundError:
             print('Descriptor::save_info -> dir does not exist')
+    
+    # fazer prototipo para salvar cada grupo de informacoes da imagem (de todos os descritores) em um arquivo
+    # numero de arquivos txt = numero de imagens no dataset
+    def new_save_info(self, dest: str, filename: str) -> None:
+        pass
 
-    # @abstractmethod
+    @abstractmethod
     def fill_descriptor(self) -> None:
-        pass
+        raise NotImplementedError
 
-    # @abstractmethod
+    @abstractmethod
     def get_similarity(self, des: 'Descriptor') -> float:
-        pass
+        raise NotImplementedError
 
     def execute(self) -> None:
         self.fill_descriptor()
+        
