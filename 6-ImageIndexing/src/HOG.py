@@ -11,6 +11,8 @@ class HOG(Descriptor):
         super().save_info(dest, filename)
         pass
 
+
+
     def get_similarity(self, des:'HOG') -> float:
         pass
 

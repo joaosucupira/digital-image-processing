@@ -1,12 +1,19 @@
 from stdafx import *
 
-class Descriptor:
+# COLOCAR ABC P FICAR POLIMORFICA
+class Descriptor():
     def __init__(self, img_path: str):
         # fix 1: removing line break so code wont break (pun)
         self.image_path = img_path.replace('\n','')
         self.descriptor = []
         self.last = False
         self.img = cv2.imread(self.image_path)
+
+    # cria nome de arquivo para guardar em txt
+    def get_filename_desc(img_path: str) -> str:
+        base = os.path.basename(img_path)
+        return os.path.splitext(base)[0] + '.txt'
+    
 
     def show_img(self):
         # img = cv2.imread(self.image_path)
@@ -30,6 +37,17 @@ class Descriptor:
 
         except FileNotFoundError:
             print('Descriptor::save_info -> dir does not exist')
+    # @abstractmethod
+    # def save_info(self, dest:str, filename: str, desc_type: str = None):
+    #     desc_filename = self.get_filename_desc(self.image_path)
+    #     file_path = os.path.join(dest, desc_filename)
+        
+    #     data_to_save = {
+    #         "type": desc_type,
+    #         "features": self.features.tolist() 
+    #     }
+    #     with open(file_path, 'a', encoding='utf-8') as f:
+    #         f.write(json.dumps(data_to_save) + '\n')
     
     # fazer prototipo para salvar cada grupo de informacoes da imagem (de todos os descritores) em um arquivo
     # numero de arquivos txt = numero de imagens no dataset

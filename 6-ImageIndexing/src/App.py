@@ -61,7 +61,17 @@ class App:
             print(sum)
 
     def test_new_save(self, source: str, dest: str) -> None:
-        pass
+        for img_file in os.listdir(source):
+
+            img_path = os.path.join(source, img_file)
+
+            desc_CH = ColorHistogram(img_path)
+            desc_LBP = LocalBinaryPattern(img_path)
+            desc_HOG = HOG(img_path)
+
+            desc_CH.save_info()
+            desc_LBP.save_info()
+            desc_HOG.save_info()
 
     # ORCHESTRATION
     def execute(self):
@@ -72,4 +82,5 @@ class App:
 
         # testing:
         # self.test_HOG()
+        # self.test_new_save(self.data_path, self.desc_path)
 
