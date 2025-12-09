@@ -2,11 +2,12 @@ from stdafx import *
 
 # COLOCAR ABC P FICAR POLIMORFICA
 class Descriptor():
-    def __init__(self, img_path: str):
-        # fix 1: removing line break so code wont break (pun)
-        self.image_path = img_path.replace('\n','')
+    def __init__(self, img_path: str, retrieve_desc: bool = False):
+        
+        self.image_path = img_path
         self.descriptor = []
         self.last = False
+        self.retrieve = retrieve_desc
         self.img = cv2.imread(self.image_path)
 
     # cria nome de arquivo para guardar em txt
@@ -24,19 +25,13 @@ class Descriptor():
         else:
             print('Descriptor::show_img -> img is None')
 
-    @abstractmethod
     def save_info(self, dest: str, filename: str) -> None:
-        try:
-            with open(os.path.join(dest, filename), 'a', encoding='utf-8') as f:
-                if self.last:
-                    # fix 2: removing last error causing comma
-                    f.write(f'{self.image_path}\n')
-                else:
-                    f.write(f'{self.image_path},\n')
+        feature_list = self.descriptor.flatten().tolist()
+        descriptor_str = " ".join(["%.8f" % x for x in feature_list])
+        
+        with open(os.path.join(dest, filename), 'a', encoding='utf-8') as f:
 
-
-        except FileNotFoundError:
-            print('Descriptor::save_info -> dir does not exist')
+            f.write(f'{self.image_path}; {descriptor_str}\n')
     # @abstractmethod
     # def save_info(self, dest:str, filename: str, desc_type: str = None):
     #     desc_filename = self.get_filename_desc(self.image_path)

@@ -18,7 +18,7 @@ class App:
     def save_descriptors(self, source: str, dest: str) -> None:
         # clears previous content if there's already old registries
 
-        with open(os.path.join(dest, FILENAME), 'w') as f:
+        with open(os.path.join(dest, FILE_HOG), 'w') as f:
             f.write('')
         
         idx = 0
@@ -28,22 +28,36 @@ class App:
             
             img_path = os.path.join(source, img)
 
-            desc = Descriptor(img_path)
+            desc = HOG(img_path)
             if idx == len(os.listdir(source)) - 1:
                 desc.last = True
 
-            desc.save_info(dest, FILENAME)
+            desc.save_info(dest, FILE_HOG)
             idx+=1
 
     # create previous Descriptor instances from the descriptors data folder 
-    def retrieve_descriptors(self, source: str, filename:str) -> None:
-        descriptors = os.path.join(source, filename)
-        with open(descriptors, 'r', encoding='utf-8') as f:
-            content = f.read()
-            retrievals = content.split(',')
-            for r in retrievals:
-                d = Descriptor(img_path=r)
+    def retrieve_descriptors(self, source: str, filename: str) -> None:
+        file_path = os.path.join(source, filename)
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                
+                if not line:
+                    continue
+                
+                parts = line.split(';', 1)
+                
+                img_path = parts[0].strip()
+                features_str = parts[1].strip()
+                
+                features_array = np.fromstring(features_str, sep=' ', dtype=np.float64)
+                
+                d = HOG(img_path, True)
+                d.descriptor = features_array
+
                 self.descriptors.append(d)
+                
 
     # rank up similarities between each descriptor
     def compare_similarities(self):
@@ -56,10 +70,8 @@ class App:
     # TESTS
     def test_HOG(self):
         for desc in self.descriptors:
-            hog = HOG(desc.image_path)
-            sum = np.sum(hog.features)
             # if there are no full zeros and no total dark images then this should print various positive numbers
-            print(sum)
+            print(desc.descriptor)
 
     def test_new_save(self, source: str, dest: str) -> None:
         for img_file in os.listdir(source):
@@ -77,11 +89,11 @@ class App:
     # ORCHESTRATION
     def execute(self):
         self.save_descriptors(self.data_path, self.desc_path)
-        self.retrieve_descriptors(self.desc_path, FILENAME)
-        self.compare_similarities()
-        self.get_results()
+        self.retrieve_descriptors(self.desc_path, FILE_HOG)
+        # self.compare_similarities()
+        # self.get_results()
 
         # testing:
-        # self.test_HOG()
+        self.test_HOG()
         # self.test_new_save(self.data_path, self.desc_path)
 
