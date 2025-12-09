@@ -2,11 +2,11 @@ import numpy as np
 import cv2
 import math
 
-N_BINS = 8
+self.n_bins = 8
 
-def calcular_matriz_custo(n_bins):
+def calcular_matriz_custo():
 
-    tam_bins = 256 // n_bins  
+    tam_bins = 256 // self.n_bins  
     offset = tam_bins / 2     
     
     # Lista para guardar os "endereços" das 512 cores
@@ -15,9 +15,9 @@ def calcular_matriz_custo(n_bins):
     # A ordem dos loops (B fora, R dentro) simula o comportamento
     # do ravel() em arrays criados com indexing='ij'
 
-    for b in range(n_bins):
-        for g in range(n_bins):     
-            for r in range(n_bins): 
+    for b in range(self.n_bins):
+        for g in range(self.n_bins):     
+            for r in range(self.n_bins): 
                 
                 # Transforma índice em valor de cor
                 val_r = (r * tam_bins) + offset
@@ -54,19 +54,19 @@ def calcular_matriz_custo(n_bins):
     return matriz_custos
 
 
-def histograma_cor(img):
+def histograma_cor():
 
-    n_cores = N_BINS**3
-    tam_bins = 256 // N_BINS
+    n_cores = self.n_bins **3
+    tam_bins = 256 // self.n_bins
 
     histograma =  np.zeros(n_cores)
     
-    img_quantizada = img // tam_bins
+    img_quantizada = self.img // tam_bins
 
     b,g,r = img_quantizada[:,:,0].astype(np.int32),  img_quantizada[:,:,1].astype(np.int32) , img_quantizada[:,:,2].astype(np.int32)
 
     #Mistura o r,g,b em um único canal
-    img_planificada = (b * (N_BINS ** 2) + g*N_BINS + r) 
+    img_planificada = (b * (self.n_bins ** 2) + g*self.n_bins + r) 
 
     for i in range (img_planificada.shape[0]):
         for j in range (img_planificada.shape[1]):
@@ -81,7 +81,7 @@ def histograma_cor(img):
 def earth_movers_distancia(hist_base, hist_entrada, matriz_custos):
 
     distancia = 0
-    n_cores = N_BINS**3
+    n_cores = self.n_bins**3
     hist_base = hist_base.astype(np.float32).reshape(n_cores,1)
     hist_entrada = hist_entrada.astype(np.float32).reshape(n_cores,1)
     matriz_custos = np.array(matriz_custos).astype(np.float32)

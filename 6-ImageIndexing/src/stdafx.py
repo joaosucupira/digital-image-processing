@@ -1,6 +1,7 @@
 # MODULES
 import os
 import json
+import math
 import cv2 
 import numpy as np 
 from pathlib import Path
@@ -15,6 +16,7 @@ DATASET_PATH = '../img'
 DESCRIPTORS_PATH = '../descriptors'
 INPUT_PATH = '../input'
 FILE_HOG = 'hog.txt'
+N_BINS = 8
 
 IMAGE_SIZE = (500, 500) # (Largura, Altura)
 
