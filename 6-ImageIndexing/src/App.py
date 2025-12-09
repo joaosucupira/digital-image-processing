@@ -47,7 +47,8 @@ class App:
 
     # rank up similarities between each descriptor
     def compare_similarities(self):
-        pass
+        for desc in self.descriptors:
+            desc.show_img()
     # show up dataset images related to input
     def get_results(self):
         pass

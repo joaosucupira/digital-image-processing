@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from Descriptor import Descriptor
 
 # MACROS
-DATASET_PATH = 'C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/img'
-DESCRIPTORS_PATH = 'C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/descriptors'
-INPUT_PATH = 'C:/Users/jasuc/Desktop/Projects/PDI/6-ImageIndexing/input'
+DATASET_PATH = '../img'
+DESCRIPTORS_PATH = '../descriptors'
+INPUT_PATH = '../input'
 FILENAME = 'descriptors.txt'
