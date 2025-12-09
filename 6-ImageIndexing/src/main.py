@@ -1,3 +1,4 @@
+from stdafx import *
 from App import App
 
 def main():

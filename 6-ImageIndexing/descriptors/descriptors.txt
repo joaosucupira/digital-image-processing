@@ -1,0 +1,10 @@
+../img\cachorro1.png,
+../img\cachorro2.png,
+../img\cachorro3.png,
+../img\cachorro4.png,
+../img\cachorro6.png,
+../img\macaco1.png,
+../img\macaco2.png,
+../img\macaco3.png,
+../img\macaco4.png,
+../img\macaco5.png
