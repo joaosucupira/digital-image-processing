@@ -49,8 +49,8 @@ class ColorHistogram(Descriptor):
     
     # 3. Bloco Estático de Inicialização da Matriz de Custo
     # Este bloco garante que a matriz seja calculada e armazenada APENAS UMA VEZ.
-    if matriz_custo is None:
-        matriz_custo = calcular_matriz_custo(N_BINS)
+    # if matriz_custo is None:
+    #     matriz_custo = calcular_matriz_custo(N_BINS)
 
 
 
