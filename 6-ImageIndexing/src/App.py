@@ -12,33 +12,55 @@ class App:
         self.desc_path = descriptors
         self.execute()
 
-    # BASE METHODS
-
-    # register in txt file the descriptor information for the next run
-    def save_descriptors(self, source: str, dest: str) -> None:
-        # clears previous content if there's already old registries
+    def save_HOG_descriptors(self, source: str, dest: str) -> None:
 
         with open(os.path.join(dest, FILE_HOG), 'w') as f:
             f.write('')
         
         idx = 0
-        # acessing png from img folder
         for img in os.listdir(source):
-                
             
             img_path = os.path.join(source, img)
 
             desc = HOG(img_path)
-            if idx == len(os.listdir(source)) - 1:
-                desc.last = True
 
             desc.save_info(dest, FILE_HOG)
             idx+=1
+    
+    def save_COR_descriptors(self, source: str, dest: str) -> None:
 
-    # create previous Descriptor instances from the descriptors data folder 
-    def retrieve_descriptors(self, source: str, filename: str) -> None:
+        with open(os.path.join(dest, FILE_COR), 'w') as f:
+            f.write('')
+        
+        idx = 0
+        for img in os.listdir(source):
+                
+            img_path = os.path.join(source, img)
+
+            desc = ColorHistogram(img_path)
+    
+            desc.save_info(dest, FILE_COR)
+            idx+=1
+
+    def save_LBP_descriptors(self, source: str, dest: str) -> None:
+
+        with open(os.path.join(dest, FILE_LBP), 'w') as f:
+            f.write('')
+        
+        idx = 0
+        for img in os.listdir(source):
+                
+            img_path = os.path.join(source, img)
+
+            desc = LocalBinaryPattern(img_path)
+
+            desc.save_info(dest, FILE_LBP)
+            idx+=1
+
+    def retrieve_HOG_descriptors(self, source: str, filename: str) -> None:
         file_path = os.path.join(source, filename)
         
+        self.descriptors = []
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
@@ -51,9 +73,55 @@ class App:
                 img_path = parts[0].strip()
                 features_str = parts[1].strip()
                 
-                features_array = np.fromstring(features_str, sep=' ', dtype=np.float64)
+                features_array = np.fromstring(features_str, sep=' ', dtype=np.float32)
                 
-                d = HOG(img_path, True)
+                d = HOG(img_path, retrieve_desc=True)
+                d.descriptor = features_array
+
+                self.descriptors.append(d)
+    
+    def retrieve_COR_descriptors(self, source: str, filename: str) -> None:
+        file_path = os.path.join(source, filename)
+        
+        self.descriptors = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                
+                if not line:
+                    continue
+                
+                parts = line.split(';', 1)
+                
+                img_path = parts[0].strip()
+                features_str = parts[1].strip()
+                
+                features_array = np.fromstring(features_str, sep=' ', dtype=np.float32)
+                
+                d = ColorHistogram(img_path, retrieve_desc=True)
+                d.descriptor = features_array
+
+                self.descriptors.append(d)
+
+    def retrieve_LBP_descriptors(self, source: str, filename: str) -> None:
+        file_path = os.path.join(source, filename)
+        
+        self.descriptors = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                
+                if not line:
+                    continue
+                
+                parts = line.split(';', 1)
+                
+                img_path = parts[0].strip()
+                features_str = parts[1].strip()
+                
+                features_array = np.fromstring(features_str, sep=' ', dtype=np.float32)
+                
+                d = LocalBinaryPattern(img_path, retrieve_desc =True)
                 d.descriptor = features_array
 
                 self.descriptors.append(d)
@@ -63,14 +131,16 @@ class App:
     def compare_similarities(self):
         for desc in self.descriptors:
             desc.show_img()
+
     # show up dataset images related to input
     def get_results(self):
         pass
 
     # TESTS
-    def test_HOG(self):
+    def test_retrieve(self):
+        np.set_printoptions(suppress=True, formatter={'float_kind':'{:0.8f}'.format})
+
         for desc in self.descriptors:
-            # if there are no full zeros and no total dark images then this should print various positive numbers
             print(desc.descriptor)
 
     def test_new_save(self, source: str, dest: str) -> None:
@@ -86,14 +156,13 @@ class App:
             desc_LBP.save_info()
             desc_HOG.save_info()
 
-    # ORCHESTRATION
     def execute(self):
-        self.save_descriptors(self.data_path, self.desc_path)
-        self.retrieve_descriptors(self.desc_path, FILE_HOG)
-        # self.compare_similarities()
-        # self.get_results()
+        
+        #self.save_HOG_descriptors(self.data_path, self.desc_path)
+        #self.save_COR_descriptors(self.data_path, self.desc_path)
+        
+        self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
+        self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
 
-        # testing:
-        self.test_HOG()
-        # self.test_new_save(self.data_path, self.desc_path)
+        
 

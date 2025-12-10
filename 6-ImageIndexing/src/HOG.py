@@ -14,7 +14,6 @@ class HOG(Descriptor):
                 _cellSize=HOG_CELL_SIZE,
                 _nbins=HOG_N_BINS
             )
-            # self.hog = cv2.HOGDescriptor()
             self.descriptor = (self.hog).compute(self.img)        #self.features = self.descriptor.compute(self.img)
 
     def get_similarity(self, des:'HOG') -> float:

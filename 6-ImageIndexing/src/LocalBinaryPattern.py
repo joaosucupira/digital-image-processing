@@ -6,11 +6,5 @@ class LocalBinaryPattern(Descriptor):
         super.__init__(img_path)
         self.descriptor = np.zeros(points * (points - 1) + 3, dtype=np.float64)
         
-    def save_info(self, dest: str, filename: str) -> None:
-        pass
-
     def get_similarity(self, des:'LocalBinaryPattern') -> float:
-        pass
-
-    def fill_descriptor(self) -> None:
         pass

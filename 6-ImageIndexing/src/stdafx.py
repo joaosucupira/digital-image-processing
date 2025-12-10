@@ -15,8 +15,12 @@ from Descriptor import Descriptor
 DATASET_PATH = '../img'
 DESCRIPTORS_PATH = '../descriptors'
 INPUT_PATH = '../input'
+
 FILE_HOG = 'hog.txt'
-N_BINS = 8
+FILE_COR = 'cor.txt'
+FILE_LBP = 'lbp.txt'
+
+COLOR_N_BINS = 8
 
 IMAGE_SIZE = (500, 500) # (Largura, Altura)
 
