@@ -9,6 +9,7 @@ class Descriptor():
         self.descriptor = []
         self.retrieve = retrieve_desc
         self.img = cv2.imread(self.image_path)
+        self.rank = -1
     
     @abstractmethod
     def show_img(self, ranking, score)-> None:

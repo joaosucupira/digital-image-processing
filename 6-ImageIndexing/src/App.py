@@ -19,6 +19,7 @@ class App:
         self.rankingHog = []
         self.rankingCor = []
         self.rankingLbp = []
+        self.rankingMix = []
         self.execute()
 
     def save_HOG_descriptors(self, source: str, dest: str) -> None:
@@ -136,13 +137,13 @@ class App:
                 self.datasetLbps.append(d)
     
     def save (self):
-        # self.save_HOG_descriptors(self.data_path, self.desc_path)
-        # self.save_COR_descriptors(self.data_path, self.desc_path)
+        self.save_HOG_descriptors(self.data_path, self.desc_path)
+        self.save_COR_descriptors(self.data_path, self.desc_path)
         self.save_LBP_descriptors(self.data_path, self.desc_path)
     
     def retrieve(self):
-        # self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
-        # self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
+        self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
+        self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
         self.retrieve_LBP_descriptors(self.desc_path, FILE_LBP)
 
     def gerarHankings(self):
@@ -162,24 +163,51 @@ class App:
         for lbp in self.datasetLbps:
             dist = lbp.get_similarity(self.inputLbp)
             self.rankingLbp.append([dist, lbp])
-
+        
         self.rankingHog.sort(key=lambda x: x[0])
         self.rankingCor.sort(key=lambda x: x[0])
-        self.rankingLbp.sort(key=lambda x: x[0])            
+        self.rankingLbp.sort(key=lambda x: x[0])
+        
+        self.atribuirHanking()
+
+    def atribuirHanking(self):
+        for i in range (DATASET_SIZE):
+            self.rankingCor[i][1].rank = i+1
+            self.rankingHog[i][1].rank = i+1
+            self.rankingLbp[i][1].rank = i+1
+
+
+   
+    def gerarHankingMix(self):
+        soma_ranks = {}
+        
+        for score, desc in self.rankingCor:
+            soma_ranks[desc.image_path] = {'total_rank': desc.rank, 'descriptor': desc}
+
+        for score, desc in self.rankingLbp:
+            if desc.image_path in soma_ranks:
+                soma_ranks[desc.image_path]['total_rank'] += desc.rank
+        
+        self.rankingMix = []
+        for path, data in soma_ranks.items():
+            self.rankingMix.append([data['total_rank'], data['descriptor']])
+
+        self.rankingMix.sort(key=lambda x: x[0])
 
     def get_results(self, top_n = 3):
 
         self.gerarHankings()
+        self.gerarHankingMix()
 
         def exibir_ranking(lista_ranking):
-
             for i, (score, descritor) in enumerate(lista_ranking[:top_n]):
-                descritor.show_img(i,score)
+                descritor.show_img(i, score)
 
         exibir_ranking(self.rankingHog)
         exibir_ranking(self.rankingCor)
         exibir_ranking(self.rankingLbp)
-
+        exibir_ranking(self.rankingMix)
+        
         return
 
     def test_retrieve(self):
@@ -191,9 +219,9 @@ class App:
 
     def execute(self):
         
-        # self.save()
+        #self.save()
         self.retrieve()
-        self.get_results(6)
+        self.get_results(10)
 
 
         

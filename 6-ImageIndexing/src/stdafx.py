@@ -7,12 +7,14 @@ import numpy as np
 from pathlib import Path
 from abc import ABC, abstractmethod
 
+#COR,HOG,LBP: 05, 431 e 1086, 279 e 1086
+#1303
 
 # CLASSES
 from Descriptor import Descriptor
 
 # MACROS
-
+DATASET_SIZE = 1360
 DATASET_PATH = '../img'
 DESCRIPTORS_PATH = '../descriptors'
 INPUT_PATH_FILE = '../input/image.jpg'
