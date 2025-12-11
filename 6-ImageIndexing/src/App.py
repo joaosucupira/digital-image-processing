@@ -138,15 +138,14 @@ class App:
     def save (self):
         self.save_HOG_descriptors(self.data_path, self.desc_path)
         self.save_COR_descriptors(self.data_path, self.desc_path)
-        #self.save_LBP_descriptors(self.data_path, self.desc_path)
+        self.save_LBP_descriptors(self.data_path, self.desc_path)
     
     def retrieve(self):
         self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
         self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
-        #self.retrieve_LBP_descriptors(self.data_path, FILE_LBP)
+        self.retrieve_LBP_descriptors(self.desc_path, FILE_LBP)
 
-    # rank up similarities between each descriptor
-    def gerarHankings(self): # Mantendo o nome original do seu arquivo
+    def gerarHankings(self):
         
         self.rankingHog = []
         self.rankingCor = []
@@ -166,9 +165,8 @@ class App:
 
         self.rankingHog.sort(key=lambda x: x[0])
         self.rankingCor.sort(key=lambda x: x[0])
-        self.rankingLbp.sort(key=lambda x: x[0])
-            
-    # show up dataset images related to input
+        self.rankingLbp.sort(key=lambda x: x[0])            
+
     def get_results(self, top_n = 3):
 
         self.gerarHankings()
@@ -180,28 +178,16 @@ class App:
 
         exibir_ranking(self.rankingHog)
         exibir_ranking(self.rankingCor)
+        exibir_ranking(self.rankingLbp)
 
         return
 
-    # TESTS
     def test_retrieve(self):
         np.set_printoptions(suppress=True, formatter={'float_kind':'{:0.8f}'.format})
 
         for desc in self.datasetHogs:
             print(desc.descriptor)
 
-    def test_new_save(self, source: str, dest: str) -> None:
-        for img_file in os.listdir(source):
-
-            img_path = os.path.join(source, img_file)
-
-            desc_CH = ColorHistogram(img_path)
-            desc_LBP = LocalBinaryPattern(img_path)
-            desc_HOG = HOG(img_path)
-
-            desc_CH.save_info()
-            desc_LBP.save_info()
-            desc_HOG.save_info()
 
     def execute(self):
         

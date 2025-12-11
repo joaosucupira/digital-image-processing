@@ -14,6 +14,17 @@ class LocalBinaryPattern(Descriptor):
             self.descriptor = np.zeros(256, dtype=np.float64)
             self.fill_descriptor()
 
+    def show_img(self, ranking, score):
+        
+        msg = "TOP " + str(ranking+1) + " LBP - " + str(score)
+        if self.img is not None:
+            cv2.imshow(msg, self.img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        else:
+            print('Descriptor::show_img -> img is None')
+
+
     def fill_descriptor(self) -> None:
         height, width = self.img.shape
         r = self.radius
