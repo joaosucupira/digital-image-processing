@@ -191,7 +191,7 @@ class App:
 
     def execute(self):
         
-        #self.save()
+        self.save()
         self.retrieve()
         self.get_results(6)
 
