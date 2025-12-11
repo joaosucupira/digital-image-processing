@@ -14,11 +14,21 @@ class HOG(Descriptor):
                 _cellSize=HOG_CELL_SIZE,
                 _nbins=HOG_N_BINS
             )
-            self.descriptor = (self.hog).compute(self.img)        #self.features = self.descriptor.compute(self.img)
+            self.descriptor = (self.hog).compute(self.img)
 
     def get_similarity(self, des:'HOG') -> float:
-        pass
+        return np.linalg.norm(self.descriptor - des.descriptor) #soma as distancias euclidianas de cada célula
 
     def fill_descriptor(self) -> None:
         pass
+
+    def show_img(self, ranking, score):
+        
+        msg = "TOP " + str(ranking+1) + " HOG - " + str(score)
+        if self.img is not None:
+            cv2.imshow(msg, self.img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        else:
+            print('Descriptor::show_img -> img is None')
     

@@ -14,7 +14,7 @@ from Descriptor import Descriptor
 # MACROS
 DATASET_PATH = '../img'
 DESCRIPTORS_PATH = '../descriptors'
-INPUT_PATH = '../input'
+INPUT_PATH_FILE = '../input/input.png'
 
 FILE_HOG = 'hog.txt'
 FILE_COR = 'cor.txt'

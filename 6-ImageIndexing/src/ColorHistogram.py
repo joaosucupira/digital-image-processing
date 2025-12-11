@@ -24,6 +24,16 @@ class ColorHistogram(Descriptor):
             des.descriptor, 
             ColorHistogram.matriz_custo
         )
+    
+    def show_img(self, ranking, score):
+        
+        msg = "TOP " + str(ranking+1) + " COR - " + str(score)
+        if self.img is not None:
+            cv2.imshow(msg, self.img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        else:
+            print('Descriptor::show_img -> img is None')
 
     def histograma_cor(self):
         img_quantizada = (self.img // self.tam_bins).astype(np.int32)

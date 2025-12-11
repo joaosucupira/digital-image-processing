@@ -9,14 +9,9 @@ class Descriptor():
         self.retrieve = retrieve_desc
         self.img = cv2.imread(self.image_path)
     
-    def show_img(self):
-        # img = cv2.imread(self.image_path)
-        if self.img is not None:
-            cv2.imshow('descriptor associated img', self.img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-        else:
-            print('Descriptor::show_img -> img is None')
+    @abstractmethod
+    def show_img(self, ranking, score)-> None:
+        raise NotImplementedError
 
     def save_info(self, dest: str, filename: str) -> None:
         feature_list = self.descriptor.flatten().tolist()
