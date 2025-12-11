@@ -43,6 +43,6 @@ class LocalBinaryPattern(Descriptor):
             self.descriptor = self.descriptor / (np.sum(self.descriptor) + 1e-7)
 
     def get_similarity(self, des:'LocalBinaryPattern') -> float:
-        return cv2.compareHist(self.descriptor.astype(np.float32), 
+        return 1 - cv2.compareHist(self.descriptor.astype(np.float32), 
                                des.descriptor.astype(np.float32), 
                                cv2.HISTCMP_CORREL)
