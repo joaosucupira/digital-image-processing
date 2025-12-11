@@ -136,13 +136,13 @@ class App:
                 self.datasetLbps.append(d)
     
     def save (self):
-        self.save_HOG_descriptors(self.data_path, self.desc_path)
-        self.save_COR_descriptors(self.data_path, self.desc_path)
+        # self.save_HOG_descriptors(self.data_path, self.desc_path)
+        # self.save_COR_descriptors(self.data_path, self.desc_path)
         self.save_LBP_descriptors(self.data_path, self.desc_path)
     
     def retrieve(self):
-        self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
-        self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
+        # self.retrieve_HOG_descriptors(self.desc_path, FILE_HOG)
+        # self.retrieve_COR_descriptors(self.desc_path, FILE_COR)
         self.retrieve_LBP_descriptors(self.desc_path, FILE_LBP)
 
     def gerarHankings(self):
@@ -191,7 +191,7 @@ class App:
 
     def execute(self):
         
-        self.save()
+        # self.save()
         self.retrieve()
         self.get_results(6)
 
